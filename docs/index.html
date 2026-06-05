@@ -3,289 +3,254 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Calico HostEndpoint 實驗總覽</title>
-  <style>
-    :root {
-      --bg: #f4efe7;
-      --panel: #fffaf3;
-      --ink: #1d2b2e;
-      --muted: #5f696d;
-      --line: #d7cab7;
-      --accent: #0f766e;
-      --accent-soft: rgba(15, 118, 110, 0.12);
-      --accent-2: #b45309;
-      --ok: #166534;
-      --warn: #92400e;
-      --shadow: 0 18px 44px rgba(29, 43, 46, 0.08);
-      --radius: 22px;
-      --serif: "Noto Serif TC", "PMingLiU", Georgia, serif;
-      --sans: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
-      --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      color: var(--ink);
-      background:
-        radial-gradient(circle at top right, rgba(180, 83, 9, 0.12), transparent 22rem),
-        radial-gradient(circle at top left, rgba(15, 118, 110, 0.12), transparent 24rem),
-        linear-gradient(180deg, #f8f2e9 0%, var(--bg) 100%);
-      font: 16px/1.7 var(--sans);
-    }
-
-    a { color: var(--accent); }
-
-    .shell {
-      width: min(1120px, calc(100vw - 2rem));
-      margin: 0 auto;
-      padding: 2rem 0 4rem;
-    }
-
-    .hero,
-    .section,
-    .footer {
-      background: var(--panel);
-      border: 1px solid rgba(215, 202, 183, 0.95);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-    }
-
-    .hero {
-      padding: 2.4rem;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .hero::after {
-      content: "";
-      position: absolute;
-      right: -4rem;
-      top: -4rem;
-      width: 16rem;
-      height: 16rem;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(180, 83, 9, 0.22), transparent 65%);
-      pointer-events: none;
-    }
-
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.35rem 0.8rem;
-      border-radius: 999px;
-      background: var(--accent-soft);
-      color: var(--accent);
-      font-size: 0.8rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    h1, h2, h3 {
-      margin: 0 0 0.8rem;
-      line-height: 1.15;
-      font-family: var(--serif);
-    }
-
-    h1 {
-      margin-top: 1rem;
-      font-size: clamp(2.3rem, 5vw, 4rem);
-      max-width: 12ch;
-    }
-
-    h2 {
-      font-size: clamp(1.7rem, 3vw, 2.3rem);
-    }
-
-    h3 {
-      font-size: 1.2rem;
-    }
-
-    p {
-      margin: 0 0 1rem;
-      color: var(--muted);
-    }
-
-    .meta,
-    .grid {
-      display: grid;
-      gap: 1rem;
-    }
-
-    .meta {
-      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-      margin-top: 1.5rem;
-    }
-
-    .grid.two {
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    }
-
-    .grid.three {
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    }
-
-    .meta-card,
-    .card {
-      border: 1px solid rgba(215, 202, 183, 0.9);
-      border-radius: 18px;
-      background: linear-gradient(180deg, #fffaf3 0%, #f8f1e6 100%);
-      padding: 1.1rem;
-    }
-
-    .meta-card strong {
-      display: block;
-      margin-bottom: 0.25rem;
-      color: var(--ink);
-    }
-
-    .section {
-      margin-top: 1.2rem;
-      padding: 1.5rem;
-    }
-
-    .status {
-      display: inline-block;
-      padding: 0.2rem 0.55rem;
-      border-radius: 999px;
-      font-size: 0.76rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      margin-bottom: 0.75rem;
-    }
-
-    .status.ok {
-      color: var(--ok);
-      background: rgba(22, 101, 52, 0.1);
-    }
-
-    .status.warn {
-      color: var(--warn);
-      background: rgba(146, 64, 14, 0.12);
-    }
-
-    ul {
-      margin: 0.4rem 0 0;
-      padding-left: 1.1rem;
-      color: var(--muted);
-    }
-
-    li + li { margin-top: 0.35rem; }
-
-    code {
-      font-family: var(--mono);
-      background: rgba(15, 118, 110, 0.08);
-      border-radius: 6px;
-      padding: 0.12rem 0.35rem;
-      color: var(--ink);
-      font-size: 0.92em;
-    }
-
-    .links a {
-      display: block;
-      margin-top: 0.55rem;
-      font-weight: 700;
-      text-decoration: none;
-    }
-
-    .footer {
-      margin-top: 1.2rem;
-      padding: 1.35rem 1.5rem;
-    }
-
-    @media (max-width: 720px) {
-      .hero, .section, .footer { padding: 1.2rem; }
-    }
-  </style>
+  <title>Calico Central Firewall Lab</title>
+  <link rel="stylesheet" href="./assets/site.css">
 </head>
 <body>
   <main class="shell">
+    <header class="topbar">
+      <div class="brand">Calico Central Firewall Lab</div>
+      <nav class="tabs" aria-label="Primary">
+        <a class="tab active" href="./index.html">首頁</a>
+        <a class="tab" href="./install.html">安裝指南</a>
+        <a class="tab" href="./experiments.html">實驗</a>
+      </nav>
+    </header>
+
     <section class="hero">
-      <span class="eyebrow">Azure / k3s / Cilium / Calico HostEndpoint</span>
-      <h1>Calico HostEndpoint 實驗入口</h1>
+      <span class="eyebrow">Current State</span>
+      <h1>集中式 Calico 身分防火牆 Lab</h1>
       <p>
-        這個靜態頁面集合用來記錄目前的實驗設計、已套用的 Calico 設定，以及每一輪 HostEndpoint 驗證結果。
-        目標不是把 Calico 當成整個叢集的 CNI，而是驗證它能不能只負責主機端點標籤與主機防火牆策略。
+        目前先把環境收斂到一個已完成的基線：1 個 Kubernetes 叢集、2 台額外 VM，
+        並讓兩台 VM 都接到第一個叢集的 Calico control plane。身份型防火牆與多叢集集中式政策，
+        會留在下一階段處理。
       </p>
-      <div class="meta">
-        <div class="meta-card">
-          <strong>叢集側基線</strong>
-          k3s 搭配 Cilium，Cilium 仍是唯一的 CNI。
-        </div>
-        <div class="meta-card">
-          <strong>Calico 角色</strong>
-          僅限 HostEndpoint / GlobalNetworkPolicy / Felix。
-        </div>
-        <div class="meta-card">
-          <strong>文件策略</strong>
-          首頁保留總覽，個別實驗拆成獨立頁面，方便後續持續追加測試。
-        </div>
-        <div class="meta-card">
-          <strong>目前進度</strong>
-          已完成 k3s worker 與首台 standalone VM 的 HostEndpoint 驗證。
-        </div>
+    </section>
+
+    <section class="section">
+      <h2>環境摘要</h2>
+      <div class="grid four">
+        <article class="card">
+          <div class="metric">1</div>
+          <div class="metric-label">Kubernetes 叢集</div>
+          <p>目前只有 cluster-1：<code>hep-0605-0534-k3s</code></p>
+        </article>
+        <article class="card">
+          <div class="metric">2</div>
+          <div class="metric-label">Standalone VMs</div>
+          <p><code>legacy-01</code> 與 <code>legacy-02</code> 都已接入 Felix。</p>
+        </article>
+        <article class="card">
+          <div class="metric">1</div>
+          <div class="metric-label">Calico Control Plane</div>
+          <p>目前所有 policy metadata 都由 cluster-1 的 Kubernetes datastore 提供。</p>
+        </article>
+        <article class="card">
+          <div class="metric">3</div>
+          <div class="metric-label">已建立 HostEndpoints</div>
+          <p>cluster-1 worker 1 個，VM 2 個。</p>
+        </article>
       </div>
     </section>
 
     <section class="section">
-      <h2>實驗分頁</h2>
+      <h2>目前架構</h2>
+      <p>
+        這是現在真正存在的環境：cluster-1 本身使用 Cilium 當 CNI，Calico 只保留 policy-only 元件；
+        兩台不加入叢集的 VM 透過 Felix + kubeconfig 接到 cluster-1 的 datastore。
+      </p>
+      <div class="diagram">
+        <svg viewBox="0 0 980 440" role="img" aria-label="Current centralized Calico lab architecture">
+          <defs>
+            <marker id="home-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#0f766e"></path>
+            </marker>
+          </defs>
+
+          <rect x="34" y="28" width="552" height="314" rx="24" fill="#f7efe2" stroke="#d7cab7"></rect>
+          <text x="62" y="62" fill="#1d2b2e" font-size="24" font-family="Noto Serif TC, PMingLiU, Georgia, serif">Cluster-1</text>
+          <text x="62" y="92" fill="#5f696d" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">k3s + Cilium + Calico policy-only</text>
+
+          <rect x="62" y="126" width="162" height="86" rx="18" fill="#fffaf3" stroke="#d7cab7"></rect>
+          <text x="84" y="156" fill="#1d2b2e" font-size="18" font-family="Noto Serif TC, PMingLiU, Georgia, serif">Jumpbox</text>
+          <text x="84" y="184" fill="#5f696d" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">20.110.199.106</text>
+          <text x="84" y="202" fill="#5f696d" font-size="13" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">SSH / kubectl / provisioning</text>
+
+          <rect x="250" y="126" width="150" height="86" rx="18" fill="#fffaf3" stroke="#d7cab7"></rect>
+          <text x="270" y="156" fill="#1d2b2e" font-size="18" font-family="Noto Serif TC, PMingLiU, Georgia, serif">k3s-server-0</text>
+          <text x="270" y="184" fill="#5f696d" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">10.70.10.10</text>
+          <text x="270" y="202" fill="#5f696d" font-size="13" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">Kubernetes datastore</text>
+
+          <rect x="426" y="126" width="128" height="86" rx="18" fill="#fffaf3" stroke="#d7cab7"></rect>
+          <text x="446" y="156" fill="#1d2b2e" font-size="18" font-family="Noto Serif TC, PMingLiU, Georgia, serif">agent-01</text>
+          <text x="446" y="184" fill="#5f696d" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">10.70.10.11</text>
+          <text x="446" y="202" fill="#5f696d" font-size="13" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">HEP active</text>
+
+          <rect x="250" y="236" width="150" height="86" rx="18" fill="#fffaf3" stroke="#d7cab7"></rect>
+          <text x="270" y="266" fill="#1d2b2e" font-size="18" font-family="Noto Serif TC, PMingLiU, Georgia, serif">agent-02</text>
+          <text x="270" y="294" fill="#5f696d" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">10.70.10.12</text>
+          <text x="270" y="312" fill="#5f696d" font-size="13" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">Cilium datapath</text>
+
+          <rect x="426" y="236" width="128" height="86" rx="18" fill="#fffaf3" stroke="#d7cab7"></rect>
+          <text x="440" y="266" fill="#1d2b2e" font-size="18" font-family="Noto Serif TC, PMingLiU, Georgia, serif">Calico</text>
+          <text x="440" y="294" fill="#5f696d" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">policy-only</text>
+          <text x="440" y="312" fill="#5f696d" font-size="13" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">GNP / HEP / Felix metadata</text>
+
+          <rect x="618" y="28" width="326" height="314" rx="24" fill="#f3eee4" stroke="#d7cab7"></rect>
+          <text x="646" y="62" fill="#1d2b2e" font-size="24" font-family="Noto Serif TC, PMingLiU, Georgia, serif">Standalone VM Domain</text>
+          <text x="646" y="92" fill="#5f696d" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">Felix-only, not Kubernetes workers</text>
+
+          <rect x="650" y="128" width="264" height="86" rx="18" fill="#fffaf3" stroke="#d7cab7"></rect>
+          <text x="674" y="158" fill="#1d2b2e" font-size="18" font-family="Noto Serif TC, PMingLiU, Georgia, serif">legacy-01</text>
+          <text x="674" y="186" fill="#5f696d" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">10.70.20.20</text>
+          <text x="674" y="204" fill="#5f696d" font-size="13" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">Felix active / baseline profile</text>
+
+          <rect x="650" y="238" width="264" height="86" rx="18" fill="#fffaf3" stroke="#d7cab7"></rect>
+          <text x="674" y="268" fill="#1d2b2e" font-size="18" font-family="Noto Serif TC, PMingLiU, Georgia, serif">legacy-02</text>
+          <text x="674" y="296" fill="#5f696d" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">10.70.20.21</text>
+          <text x="674" y="314" fill="#5f696d" font-size="13" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">Felix active / restricted profile</text>
+
+          <line x1="400" y1="170" x2="650" y2="170" stroke="#0f766e" stroke-width="3" marker-end="url(#home-arrow)"></line>
+          <text x="440" y="154" fill="#0f766e" font-size="13" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">kubeconfig / datastore / policy metadata</text>
+
+          <line x1="400" y1="278" x2="650" y2="278" stroke="#0f766e" stroke-width="3" marker-end="url(#home-arrow)"></line>
+          <text x="432" y="262" fill="#0f766e" font-size="13" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">shared Calico control plane</text>
+
+          <rect x="34" y="366" width="910" height="46" rx="14" fill="#fffaf3" stroke="#d7cab7"></rect>
+          <text x="58" y="394" fill="#1d2b2e" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">
+            現況重點：只有一個 Kubernetes 叢集，兩台 VM 已接入同一個 Calico control plane；identity-based firewall 與第二個叢集尚未開始。
+          </text>
+        </svg>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Inventory</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>類型</th>
+            <th>名稱</th>
+            <th>位址 / 數量</th>
+            <th>目前角色</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Kubernetes Cluster</td>
+            <td><code>hep-0605-0534-k3s</code></td>
+            <td>1 cluster / 3 real nodes</td>
+            <td>Cilium 是 CNI，Calico 提供 policy-only control plane。</td>
+          </tr>
+          <tr>
+            <td>Standalone VM</td>
+            <td><code>legacy-01</code></td>
+            <td><code>10.70.20.20</code></td>
+            <td>Felix active，保留 baseline profile。</td>
+          </tr>
+          <tr>
+            <td>Standalone VM</td>
+            <td><code>legacy-02</code></td>
+            <td><code>10.70.20.21</code></td>
+            <td>Felix active，作為 restricted profile 測試對象。</td>
+          </tr>
+          <tr>
+            <td>Calico Nodes</td>
+            <td>3 k3s nodes + 2 VM nodes</td>
+            <td>共 5 個</td>
+            <td>都已出現在 Calico datastore 中。</td>
+          </tr>
+          <tr>
+            <td>HostEndpoints</td>
+            <td>agent-01 / legacy-01 / legacy-02</td>
+            <td>共 3 個</td>
+            <td>目前只有 host-level policy 路徑已建立。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>第二階段目標架構</h2>
+      <p>
+        下一階段是第二個 Kubernetes 叢集，也就是你提到的 <code>TKS / cluster-2</code> 目標。
+        文件會先把它畫成 target architecture，但目前還不把它當成已完成狀態。
+      </p>
       <div class="grid two">
-        <article class="card links">
-          <span class="status ok">已執行</span>
-          <h3>實驗 A: k3s + Cilium + Calico HostEndpoint</h3>
-          <p>
-            記錄在既有 k3s + Cilium 叢集上，如何把 Calico 限縮成 policy-only 佈署、避免接管 CNI，並驗證
-            Calico HostEndpoint 是否真的能在節點介面上生效。
-          </p>
-          <a href="./experiments/k3s-cilium-hostendpoint.html">開啟叢集實驗頁面</a>
+        <article class="card">
+          <span class="status ok">已定義</span>
+          <h3>Target shape</h3>
+          <ul>
+            <li>新增第二個 Kubernetes 叢集。</li>
+            <li>第二個叢集仍採用 Cilium 當 CNI。</li>
+            <li>Calico 只保留 policy/identity 相關元件。</li>
+            <li>目標是把多叢集 workload 與 VM 放進同一個 selector 模型。</li>
+          </ul>
         </article>
-        <article class="card links">
-          <span class="status ok">已完成第一輪</span>
-          <h3>實驗 B: Standalone VM + Felix</h3>
-          <p>
-            記錄非 Kubernetes 節點的 Azure VM 如何加入同一套 Calico host policy 模型，包括 kubeconfig、
-            Felix 啟動方式、Node/HostEndpoint 建立，以及後續的連線測試。
-          </p>
-          <a href="./experiments/standalone-vm-hostendpoint.html">開啟 VM 實驗頁面</a>
+        <article class="card">
+          <span class="status warn">待驗證</span>
+          <h3>管理面模型</h3>
+          <ul>
+            <li>目前只證明「cluster-1 管理 standalone VM」成立。</li>
+            <li>「cluster-1 直接集中管理 cluster-2」還沒有在這個 lab 內驗證。</li>
+            <li>因此首頁先明確區分 current state 與 target state。</li>
+          </ul>
         </article>
       </div>
-    </section>
+      <div class="diagram">
+        <svg viewBox="0 0 980 300" role="img" aria-label="Target architecture for multi-cluster centralized firewall">
+          <defs>
+            <marker id="target-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#0f766e"></path>
+            </marker>
+            <marker id="target-arrow-warn" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#b45309"></path>
+            </marker>
+          </defs>
 
-    <section class="section">
-      <h2>目前實驗邊界</h2>
-      <div class="grid three">
-        <article class="card">
-          <h3>不改動 CNI</h3>
-          <p>
-            叢集內 pod 網路仍由 Cilium 提供；Calico 不寫入 <code>/etc/cni/net.d</code>，也不接手 pod IP 配置。
-          </p>
-        </article>
-        <article class="card">
-          <h3>先收斂範圍</h3>
-          <p>
-            叢集側目前只在單一 worker 上啟用 <code>calico-node</code> 與手動 HostEndpoint，避免一次覆蓋所有節點。
-          </p>
-        </article>
-        <article class="card">
-          <h3>文件跟著實驗走</h3>
-          <p>
-            後續如果增加更多 deny/allow、workload-to-VM、VM-to-VM 測試，會直接補到各自的實驗分頁，不再把所有內容塞進單頁。
-          </p>
-        </article>
+          <rect x="36" y="40" width="250" height="180" rx="22" fill="#f7efe2" stroke="#d7cab7"></rect>
+          <text x="62" y="76" fill="#1d2b2e" font-size="22" font-family="Noto Serif TC, PMingLiU, Georgia, serif">Cluster-1</text>
+          <text x="62" y="104" fill="#5f696d" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">Current control plane</text>
+          <text x="62" y="134" fill="#5f696d" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">Cilium CNI</text>
+          <text x="62" y="160" fill="#5f696d" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">Calico policy-only</text>
+          <text x="62" y="186" fill="#5f696d" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">Current datastore source</text>
+
+          <rect x="362" y="40" width="250" height="180" rx="22" fill="#f7efe2" stroke="#d7cab7"></rect>
+          <text x="388" y="76" fill="#1d2b2e" font-size="22" font-family="Noto Serif TC, PMingLiU, Georgia, serif">Cluster-2</text>
+          <text x="388" y="104" fill="#5f696d" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">TKS / future target</text>
+          <text x="388" y="134" fill="#5f696d" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">Cilium CNI</text>
+          <text x="388" y="160" fill="#5f696d" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">Calico policy engine</text>
+          <text x="388" y="186" fill="#b45309" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">Central management path pending</text>
+
+          <rect x="688" y="40" width="250" height="180" rx="22" fill="#f3eee4" stroke="#d7cab7"></rect>
+          <text x="714" y="76" fill="#1d2b2e" font-size="22" font-family="Noto Serif TC, PMingLiU, Georgia, serif">VM Domain</text>
+          <text x="714" y="104" fill="#5f696d" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">legacy-01 / legacy-02</text>
+          <text x="714" y="134" fill="#5f696d" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">Felix-only</text>
+          <text x="714" y="160" fill="#5f696d" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">Already connected today</text>
+
+          <line x1="286" y1="130" x2="362" y2="130" stroke="#b45309" stroke-width="3" stroke-dasharray="8 7" marker-end="url(#target-arrow-warn)"></line>
+          <text x="248" y="118" fill="#b45309" font-size="13" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">to be validated</text>
+
+          <line x1="286" y1="170" x2="688" y2="170" stroke="#0f766e" stroke-width="3" marker-end="url(#target-arrow)"></line>
+          <text x="420" y="156" fill="#0f766e" font-size="13" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">already working for standalone VM control plane path</text>
+        </svg>
       </div>
     </section>
 
     <section class="footer">
-      <h2>補充文件</h2>
-      <p>
-        仍保留原始 Markdown 文件作為執行手冊與規劃說明：
-        <a href="./calico-hostendpoint-azure-validation-plan.md">驗證計畫</a>、
-        <a href="./calico-hostendpoint-execution-runbook.md">執行 Runbook</a>。
-      </p>
+      <h2>文件導覽</h2>
+      <div class="grid two">
+        <article class="card links">
+          <h3>安裝指南</h3>
+          <p>列出 cluster-1、Calico policy-only、以及兩台 VM 的接入流程。</p>
+          <a href="./install.html">前往安裝指南</a>
+        </article>
+        <article class="card links">
+          <h3>實驗頁</h3>
+          <p>目前保留為空白面板，等 identity-based firewall 真正開始後再填入結果。</p>
+          <a href="./experiments.html">前往實驗頁</a>
+        </article>
+      </div>
     </section>
   </main>
 </body>

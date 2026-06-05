@@ -49,6 +49,8 @@
     code { font-family: var(--mono); background: rgba(15,118,110,.08); border-radius: 6px; padding: .12rem .35rem; color: var(--ink); }
     pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-family: var(--mono); line-height: 1.55; }
     .code { padding: 1rem; border-radius: 18px; border: 1px solid var(--line); background: #f7f0e5; overflow-x: auto; }
+    .diagram-frame { margin-top: 1rem; border: 1px solid rgba(216,202,184,.95); border-radius: 18px; background: linear-gradient(180deg, #fff9f1 0%, #f6efe3 100%); overflow: hidden; }
+    .diagram-frame svg { display: block; width: 100%; height: auto; }
     table { width: 100%; border-collapse: collapse; margin-top: .75rem; }
     th, td { text-align: left; vertical-align: top; padding: .8rem .7rem; border-bottom: 1px solid rgba(216,202,184,.85); }
     th { text-transform: uppercase; letter-spacing: .05em; font-size: .82rem; }
@@ -59,11 +61,12 @@
 <body>
   <main class="shell">
     <section class="hero">
-      <p><a href="../index.html">返回實驗首頁</a></p>
+      <p><a href="../index.html">返回首頁</a></p>
       <h1>實驗 B: Standalone VM + Calico Felix</h1>
       <p>
-        這一頁專門記錄非 Kubernetes 節點的 Azure VM 驗證流程。目標是把一台獨立 VM 納入相同的 Calico
-        HostEndpoint / GlobalNetworkPolicy 模型，同時保持它不是 k3s node、也不把它變成 Kubernetes worker。
+        這一頁同樣保留為 setup validation archive，不是正式的 identity-based firewall 實驗頁。
+        它記錄的是非 Kubernetes 節點的 Azure VM 接入流程。這一輪已把兩台獨立 VM 都納入同一套
+        Calico HostEndpoint / GlobalNetworkPolicy 模型，同時保持它們不是 k3s node、也不把它們變成 Kubernetes worker。
       </p>
     </section>
 
@@ -71,21 +74,90 @@
       <h2>目標 VM</h2>
       <div class="grid three">
         <article class="card">
-          <h3>主要 VM</h3>
+          <h3>baseline VM</h3>
           <p><code>hep-0605-0534-legacy-01</code></p>
           <p><code>10.70.20.20</code></p>
-          <p>目前已啟動，預設有 <code>sshd</code> 與 <code>nginx</code>。</p>
+          <p>目前保留 baseline allow profile，扮演 VM-to-VM 測試的來源端。</p>
         </article>
         <article class="card">
-          <h3>預留 VM</h3>
+          <h3>restricted VM</h3>
           <p><code>hep-0605-0534-legacy-02</code></p>
           <p><code>10.70.20.21</code></p>
-          <p>後續可用於 VM-to-VM 或 label-based allow/deny 測試。</p>
+          <p>目前已套用 default deny ingress，只開放特定來源與 SSH。</p>
         </article>
         <article class="card">
           <h3>資料來源</h3>
-          <p>Calico 資料平面不在 VM 本機保存，Felix 會透過 kubeconfig 存取 k3s 的 Kubernetes datastore。</p>
+          <p>Calico 資料平面不在 VM 本機保存，Felix 會透過 kubeconfig 存取 k3s 的 Kubernetes datastore，兩台 VM 共用同一套 label 與 policy 模型。</p>
         </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>架構圖與流量路徑</h2>
+      <p>
+        `legacy-01` 與 `legacy-02` 都是獨立 VM，只安裝 `calico-node -felix`。其中 `legacy-02`
+        使用 restricted profile 驗證 HostEndpoint 的 default deny 與 allow list；`legacy-01` 則保留 baseline
+        profile 當成可控的來源端。
+      </p>
+      <div class="diagram-frame">
+        <svg viewBox="0 0 960 420" role="img" aria-label="Standalone VM Calico 實驗架構圖">
+          <defs>
+            <marker id="vm-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#0f766e"></path>
+            </marker>
+            <marker id="vm-arrow-warn" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#b45309"></path>
+            </marker>
+          </defs>
+
+          <rect x="34" y="34" width="452" height="286" rx="24" fill="#f7efe2" stroke="#d8cab8"></rect>
+          <text x="60" y="68" fill="#202a2d" font-size="22" font-family="Noto Serif TC, PMingLiU, Georgia, serif">Kubernetes / 測試來源域</text>
+          <text x="60" y="96" fill="#606a6e" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">k3s + Cilium，Calico 透過 datastore 保留 WEP 與 HostEndpoint metadata</text>
+
+          <rect x="64" y="126" width="142" height="82" rx="18" fill="#fff9f1" stroke="#d8cab8"></rect>
+          <text x="86" y="156" fill="#202a2d" font-size="18" font-family="Noto Serif TC, PMingLiU, Georgia, serif">Jumpbox</text>
+          <text x="86" y="184" fill="#606a6e" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">10.70.0.10</text>
+          <text x="86" y="202" fill="#606a6e" font-size="13" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">SSH / HTTP probe</text>
+
+          <rect x="236" y="126" width="212" height="82" rx="18" fill="#fff9f1" stroke="#d8cab8"></rect>
+          <text x="258" y="156" fill="#202a2d" font-size="18" font-family="Noto Serif TC, PMingLiU, Georgia, serif">k3s nodes + WEP</text>
+          <text x="258" y="184" fill="#606a6e" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">server=10.70.10.10 / agent-02=10.70.10.12</text>
+          <text x="258" y="202" fill="#606a6e" font-size="13" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">access-client / blocked-client</text>
+
+          <rect x="64" y="228" width="384" height="62" rx="16" fill="#fff9f1" stroke="#d8cab8"></rect>
+          <text x="88" y="264" fill="#b45309" font-size="14" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">
+            觀察值: workload 對 VM 的 SYN 在 legacy-02 上看到的是 node IP 10.70.10.12 / 10.70.10.10，而不是 pod IP 10.42.x.x
+          </text>
+
+          <rect x="520" y="34" width="406" height="286" rx="24" fill="#f3eee4" stroke="#d8cab8"></rect>
+          <text x="546" y="68" fill="#202a2d" font-size="22" font-family="Noto Serif TC, PMingLiU, Georgia, serif">Standalone VM 域</text>
+          <text x="546" y="96" fill="#606a6e" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">Felix-only / Kubernetes datastore / HostEndpoint on eth0</text>
+
+          <rect x="552" y="126" width="340" height="82" rx="18" fill="#fff9f1" stroke="#d8cab8"></rect>
+          <text x="576" y="156" fill="#202a2d" font-size="18" font-family="Noto Serif TC, PMingLiU, Georgia, serif">legacy-01</text>
+          <text x="576" y="184" fill="#606a6e" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">endpoint_role=legacy-web / policy_profile=baseline</text>
+          <text x="576" y="202" fill="#606a6e" font-size="13" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">保留 baseline allow，作為跨 VM allow 的來源端</text>
+
+          <rect x="552" y="228" width="340" height="82" rx="18" fill="#fff9f1" stroke="#d8cab8"></rect>
+          <text x="576" y="258" fill="#202a2d" font-size="18" font-family="Noto Serif TC, PMingLiU, Georgia, serif">legacy-02</text>
+          <text x="576" y="286" fill="#606a6e" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">endpoint_role=legacy-api / policy_profile=restricted</text>
+          <text x="576" y="304" fill="#606a6e" font-size="13" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">允許 jumpbox SSH、允許 legacy-01 HTTP、其餘 ingress 預設拒絕</text>
+
+          <line x1="206" y1="166" x2="552" y2="166" stroke="#0f766e" stroke-width="3" marker-end="url(#vm-arrow)"></line>
+          <text x="352" y="148" fill="#0f766e" font-size="13" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">jumpbox → legacy-02 :22 allow</text>
+
+          <line x1="722" y1="208" x2="722" y2="228" stroke="#0f766e" stroke-width="3" marker-end="url(#vm-arrow)"></line>
+          <text x="736" y="222" fill="#0f766e" font-size="13" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">legacy-01 → legacy-02 :80 allow</text>
+
+          <line x1="448" y1="268" x2="552" y2="268" stroke="#b45309" stroke-width="3" stroke-dasharray="9 7" marker-end="url(#vm-arrow-warn)"></line>
+          <text x="248" y="246" fill="#b45309" font-size="13" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">access-client / blocked-client → legacy-02 :80</text>
+          <text x="270" y="284" fill="#b45309" font-size="13" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">都被 default deny 擋下；pod label selector 無法在 VM 邊界生效</text>
+
+          <rect x="34" y="346" width="892" height="46" rx="14" fill="#fff9f1" stroke="#d8cab8"></rect>
+          <text x="58" y="374" fill="#202a2d" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">
+            placeholder Kubernetes Node 只作為 datastore 對應，不放 kubernetes.io/os label，避免 Cilium / Envoy DaemonSet 把 fake node 算進 desired。
+          </text>
+        </svg>
       </div>
     </section>
 
@@ -101,6 +173,7 @@
             <li>以 <code>calico-node -felix</code> 當成 systemd 服務。</li>
             <li>使用單獨的 service-account kubeconfig 存取叢集 datastore。</li>
             <li>Ubuntu 22.04 lab 上額外補了 <code>libpcap.so.1</code> compatibility symlink，讓 extracted binary 可執行。</li>
+            <li>VM 端標籤模型分成 <code>policy_profile=baseline</code> 與 <code>policy_profile=restricted</code>。</li>
           </ul>
         </article>
         <article class="card">
@@ -108,9 +181,10 @@
           <h3>策略模型</h3>
           <ul>
             <li>先建立一個只用於 datastore 對應的 Kubernetes <code>Node</code> placeholder。</li>
+            <li>placeholder 不放 <code>kubernetes.io/os</code> label，避免 DaemonSet 誤算到 fake node。</li>
             <li>再建立對應的 Calico <code>Node</code> 物件。</li>
             <li>再建立對應的 VM HostEndpoint。</li>
-            <li>先套 baseline allow，再套暫時性的 deny 測試規則。</li>
+            <li><code>legacy-01</code> 保留 baseline allow；<code>legacy-02</code> 套 ingress default deny 與 allow list。</li>
             <li>在 VM 端額外設定 <code>FELIX_XDPENABLED=false</code>，避免 binary-only 安裝時的 XDP 雜訊。</li>
           </ul>
         </article>
@@ -119,9 +193,17 @@
 
 manifests/calico/vm-experiment/00-vm-agent-rbac.yaml
 manifests/calico/vm-experiment/05-legacy-01-k8s-node.yaml
+manifests/calico/vm-experiment/06-legacy-02-k8s-node.yaml
 manifests/calico/vm-experiment/10-legacy-01-node.yaml
+manifests/calico/vm-experiment/11-legacy-02-node.yaml
 manifests/calico/vm-experiment/20-host-baseline-allow-all.yaml
+manifests/calico/vm-experiment/22-protected-vm-egress-allow.yaml
+manifests/calico/vm-experiment/23-allow-jumpbox-ssh-to-protected-vms.yaml
+manifests/calico/vm-experiment/24-allow-labelled-workload-to-legacy-api.yaml
+manifests/calico/vm-experiment/25-allow-legacy-web-to-legacy-api.yaml
+manifests/calico/vm-experiment/26-default-deny-protected-vm-ingress.yaml
 manifests/calico/vm-experiment/30-legacy-01-hostendpoint.yaml
+manifests/calico/vm-experiment/35-legacy-02-hostendpoint.yaml
 manifests/calico/vm-experiment/40-legacy-01-deny-http.yaml
 </pre></div>
     </section>
@@ -155,19 +237,34 @@ manifests/calico/vm-experiment/40-legacy-01-deny-http.yaml
           <tr>
             <td>Felix 安裝</td>
             <td>完成</td>
-            <td>已把 <code>calico-node -felix</code> 以 systemd 方式啟動在 <code>legacy-01</code>，並用專屬 kubeconfig 連回 k3s datastore。</td>
+            <td>已把 <code>calico-node -felix</code> 以 systemd 方式啟動在 <code>legacy-01</code> 與 <code>legacy-02</code>，並用專屬 kubeconfig 連回 k3s datastore。</td>
           </tr>
           <tr>
-            <td>VM HostEndpoint 與 deny 測試</td>
+            <td>placeholder Node 收斂</td>
             <td>完成</td>
-            <td>已建立 VM HostEndpoint，並驗證 port 80 在 deny policy 套用後 timeout、刪除 deny 後恢復 <code>200</code>。</td>
+            <td>已移除 placeholder 上的 <code>kubernetes.io/os</code> label，Cilium / Envoy DaemonSet desired count 已恢復成 3。</td>
+          </tr>
+          <tr>
+            <td><code>legacy-01</code> baseline profile</td>
+            <td>完成</td>
+            <td>已保留 baseline allow，作為 VM-to-VM allow 測試的來源端。</td>
+          </tr>
+          <tr>
+            <td><code>legacy-02</code> restricted profile</td>
+            <td>完成</td>
+            <td>已建立 VM HostEndpoint，套用 SSH allow、legacy-01 HTTP allow、egress allow 與 ingress default deny。</td>
+          </tr>
+          <tr>
+            <td>跨域 selector 驗證</td>
+            <td>完成</td>
+            <td>已補上 VM-to-VM 與 workload-to-VM 驗證，並實際抓包確認 workload 對 VM 會以 node IP 出現。</td>
           </tr>
         </tbody>
       </table>
     </section>
 
     <section class="section">
-      <h2>第一輪驗證結果</h2>
+      <h2>目前驗證結果</h2>
       <table>
         <thead>
           <tr>
@@ -198,9 +295,34 @@ manifests/calico/vm-experiment/40-legacy-01-deny-http.yaml
             <td>通過，HTTP 回應恢復為 <code>200</code>。</td>
           </tr>
           <tr>
-            <td>叢集基線未受影響</td>
-            <td>檢查 k3s 節點狀態與 <code>cilium status --brief</code></td>
-            <td>通過，3 個真實 k3s 節點仍是 <code>Ready</code>，Cilium 為 <code>OK</code>。</td>
+            <td>jumpbox SSH 可維持</td>
+            <td>在 <code>legacy-02</code> restricted profile 生效後，透過 jumpbox SSH 到 <code>10.70.20.21</code></td>
+            <td>通過，SSH 仍可登入並回傳 <code>hep-0605-0534-legacy-02</code>。</td>
+          </tr>
+          <tr>
+            <td>jumpbox HTTP 被 default deny</td>
+            <td>從 jumpbox 存取 <code>10.70.20.21:80</code></td>
+            <td>通過，5 秒內 timeout，HTTP code 為 <code>000</code>。</td>
+          </tr>
+          <tr>
+            <td>VM-to-VM allow 生效</td>
+            <td>從 <code>legacy-01</code> 存取 <code>10.70.20.21:80</code></td>
+            <td>通過，HTTP 回應為 <code>200</code>，證明 HostEndpoint source selector 可在 VM-to-VM 路徑上工作。</td>
+          </tr>
+          <tr>
+            <td>workload label allow 未命中</td>
+            <td><code>access-client (10.42.0.215)</code> 以標籤 <code>access=legacy-http</code> 存取 <code>10.70.20.21:80</code></td>
+            <td>未通過預期 allow，實測 timeout；抓包顯示 VM 端看到來源為 <code>10.70.10.12</code>，不是 pod IP。</td>
+          </tr>
+          <tr>
+            <td>未標記 workload 被阻擋</td>
+            <td><code>blocked-client (10.42.1.232)</code> 存取 <code>10.70.20.21:80</code></td>
+            <td>通過，timeout；抓包顯示 VM 端看到來源為 <code>10.70.10.10</code>。</td>
+          </tr>
+          <tr>
+            <td>叢集基線與 DaemonSet 狀態</td>
+            <td>檢查 k3s 節點、Cilium DaemonSet、Calico / Cilium 狀態</td>
+            <td>通過，3 個真實 k3s 節點仍是 <code>Ready</code>，<code>cilium</code> / <code>cilium-envoy</code> desired 已恢復成 <code>3</code>。</td>
           </tr>
         </tbody>
       </table>
@@ -212,17 +334,17 @@ manifests/calico/vm-experiment/40-legacy-01-deny-http.yaml
         <article class="card">
           <span class="status ok">現在成立</span>
           <ul>
-            <li>第一台 standalone VM 已成功納入同一套 Calico host policy 模型。</li>
-            <li>非 Kubernetes workload 的 host firewall 已可用 label 與 GlobalNetworkPolicy 控制。</li>
-            <li>Felix 目前會持續從 k3s datastore 收到其他節點的 host metadata 更新。</li>
+            <li>兩台 standalone VM 已成功納入同一套 Calico host policy 模型。</li>
+            <li>VM-to-VM 的 label-based allow 在 HostEndpoint 模式下可實際運作。</li>
+            <li>placeholder Node 已做收斂，不再把 Cilium / Envoy DaemonSet desired 拉高。</li>
           </ul>
         </article>
         <article class="card">
           <span class="status warn">下一步</span>
           <ul>
-            <li>把相同做法擴到 <code>legacy-02</code>，補上 VM-to-VM 測試。</li>
-            <li>加入 workload-to-VM 的 selector-based allow/deny 驗證。</li>
-            <li>評估是否要把 VM 端安裝流程腳本化，避免重複手工設定。</li>
+            <li>若要把 k8s workload label 真正映射到 VM host firewall，需要評估避免 Cilium egress SNAT 的做法，或改成節點 / host label 模型。</li>
+            <li>可以再補第二組 restricted VM，驗證多個 VM 群組與更多 port-based policy。</li>
+            <li>仍可把 VM 端安裝流程腳本化，減少手工傳檔與 systemd 安裝步驟。</li>
           </ul>
         </article>
       </div>

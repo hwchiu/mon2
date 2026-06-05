@@ -1,0 +1,18 @@
+apiVersion: crd.projectcalico.org/v1
+kind: GlobalNetworkPolicy
+metadata:
+  name: vm-experiment-allow-jumpbox-ssh
+spec:
+  order: 20
+  selector: policy_profile == "restricted"
+  types:
+    - Ingress
+  ingress:
+    - action: Allow
+      protocol: TCP
+      source:
+        nets:
+          - 10.70.0.10/32
+      destination:
+        ports:
+          - 22

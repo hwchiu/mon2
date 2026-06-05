@@ -1,0 +1,4 @@
+apiVersion: projectcalico.org/v3
+kind: Node
+metadata:
+  name: hep-0605-0534-legacy-02

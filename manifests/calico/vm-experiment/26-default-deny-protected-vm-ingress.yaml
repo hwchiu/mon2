@@ -1,0 +1,9 @@
+apiVersion: crd.projectcalico.org/v1
+kind: GlobalNetworkPolicy
+metadata:
+  name: vm-experiment-default-deny-protected-vm-ingress
+spec:
+  order: 1000
+  selector: policy_profile == "restricted"
+  types:
+    - Ingress

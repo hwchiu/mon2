@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Node
 metadata:
-  name: hep-0605-0534-legacy-01
+  name: hep-0605-0534-legacy-02
   labels:
-    kubernetes.io/hostname: hep-0605-0534-legacy-01
+    kubernetes.io/hostname: hep-0605-0534-legacy-02
     lab.calico.io/non-cluster-host: "true"
 spec:
   unschedulable: true

@@ -1,0 +1,14 @@
+apiVersion: crd.projectcalico.org/v1
+kind: HostEndpoint
+metadata:
+  name: hep-0605-0534-legacy-02-eth0
+  labels:
+    endpoint_role: legacy-api
+    host_name: hep-0605-0534-legacy-02
+    policy_profile: restricted
+    platform: vm
+spec:
+  node: hep-0605-0534-legacy-02
+  interfaceName: eth0
+  expectedIPs:
+    - 10.70.20.21

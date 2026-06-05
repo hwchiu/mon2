@@ -1,0 +1,17 @@
+apiVersion: crd.projectcalico.org/v1
+kind: GlobalNetworkPolicy
+metadata:
+  name: vm-experiment-allow-legacy-web-to-legacy-api
+spec:
+  order: 40
+  selector: endpoint_role == "legacy-api"
+  types:
+    - Ingress
+  ingress:
+    - action: Allow
+      protocol: TCP
+      source:
+        selector: endpoint_role == "legacy-web"
+      destination:
+        ports:
+          - 80

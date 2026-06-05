@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>實驗 | Calico Central Firewall Lab</title>
+  <link rel="stylesheet" href="./assets/site.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">Calico Central Firewall Lab</div>
+      <nav class="tabs" aria-label="Primary">
+        <a class="tab" href="./index.html">首頁</a>
+        <a class="tab" href="./install.html">安裝指南</a>
+        <a class="tab active" href="./experiments.html">實驗</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <span class="eyebrow">Experiment Board</span>
+      <h1>Identity-Based Firewall 實驗尚未開始</h1>
+      <p>
+        目前文件把 setup 與實驗分開。setup 已經完成，但真正的 identity-based firewall 驗證
+        目前還沒有開始，因此這一頁先保留成空白的實驗面板，避免把 setup 驗證誤當成最終實驗結果。
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>環境 readiness</h2>
+      <div class="grid three">
+        <article class="card">
+          <span class="status ok">Ready</span>
+          <h3>Cluster-1</h3>
+          <p>1 個 k3s + Cilium 叢集已就緒，Calico policy-only 已掛上。</p>
+        </article>
+        <article class="card">
+          <span class="status ok">Ready</span>
+          <h3>Standalone VMs</h3>
+          <p>2 台 VM 的 Felix 均已接到第一個叢集的 Calico control plane。</p>
+        </article>
+        <article class="card">
+          <span class="status warn">Pending</span>
+          <h3>第二個叢集</h3>
+          <p>cluster-2 / 你提到的 TKS 目標尚未建立，集中管理模型尚待驗證。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>實驗看板</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>實驗項目</th>
+            <th>狀態</th>
+            <th>說明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Cross-cluster identity mapping</td>
+            <td>未開始</td>
+            <td>等第二個 Kubernetes 叢集建立後，驗證 workload identity 能否跨叢集被集中政策引用。</td>
+          </tr>
+          <tr>
+            <td>Centralized policy rollout</td>
+            <td>未開始</td>
+            <td>驗證單一 Calico control plane 是否能把 host/workload 政策一致地下發到多個叢集與 VM。</td>
+          </tr>
+          <tr>
+            <td>VM + multi-cluster unified selector model</td>
+            <td>未開始</td>
+            <td>目標是用同一組 label/selector 覆蓋 VM 與多叢集 workload。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>目前保留的 setup 驗證紀錄</h2>
+      <p>
+        以下兩頁是 setup proof，不是 identity-based firewall 最終實驗結果。它們保留是為了回看
+        cluster-1 與 standalone VM 的接入細節。
+      </p>
+      <div class="grid two">
+        <article class="card links">
+          <h3>k3s + Cilium + Calico HostEndpoint</h3>
+          <p>叢集側 policy-only 安裝、單一 worker 範圍驗證與 HostEndpoint 最小化 rollout。</p>
+          <a href="./experiments/k3s-cilium-hostendpoint.html">開啟 setup 細節頁</a>
+        </article>
+        <article class="card links">
+          <h3>Standalone VM + Felix</h3>
+          <p>兩台 Azure VM 接入 cluster-1 Calico control plane 的方式與 HostEndpoint 物件規劃。</p>
+          <a href="./experiments/standalone-vm-hostendpoint.html">開啟 setup 細節頁</a>
+        </article>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

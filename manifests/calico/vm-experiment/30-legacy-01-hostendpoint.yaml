@@ -5,8 +5,8 @@ metadata:
   labels:
     endpoint_role: legacy-web
     host_name: hep-0605-0534-legacy-01
+    policy_profile: baseline
     platform: vm
-    vm_protected: "true"
 spec:
   node: hep-0605-0534-legacy-01
   interfaceName: eth0

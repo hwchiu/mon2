@@ -1,14 +1,11 @@
 apiVersion: crd.projectcalico.org/v1
 kind: GlobalNetworkPolicy
 metadata:
-  name: vm-experiment-host-baseline-allow
+  name: vm-experiment-protected-egress-allow
 spec:
   order: 10
-  selector: policy_profile == "baseline"
+  selector: policy_profile == "restricted"
   types:
-    - Ingress
     - Egress
-  ingress:
-    - action: Allow
   egress:
     - action: Allow
