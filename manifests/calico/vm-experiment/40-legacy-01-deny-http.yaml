@@ -1,0 +1,15 @@
+apiVersion: crd.projectcalico.org/v1
+kind: GlobalNetworkPolicy
+metadata:
+  name: vm-experiment-deny-legacy-01-http
+spec:
+  order: 5
+  selector: host_name == "hep-0605-0534-legacy-01"
+  types:
+    - Ingress
+  ingress:
+    - action: Deny
+      protocol: TCP
+      destination:
+        ports:
+          - 80

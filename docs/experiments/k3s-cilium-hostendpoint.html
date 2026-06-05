@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>實驗 A: k3s + Cilium + Calico HostEndpoint</title>
+  <style>
+    :root {
+      --bg: #f6f0e8;
+      --panel: #fffaf3;
+      --ink: #1e2a2d;
+      --muted: #5f6a6e;
+      --line: #d8cab8;
+      --accent: #0f766e;
+      --ok: #166534;
+      --warn: #92400e;
+      --shadow: 0 18px 44px rgba(30, 42, 45, 0.08);
+      --radius: 22px;
+      --serif: "Noto Serif TC", "PMingLiU", Georgia, serif;
+      --sans: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(15,118,110,.12), transparent 24rem),
+        linear-gradient(180deg, #fbf6ef 0%, var(--bg) 100%);
+      font: 16px/1.7 var(--sans);
+    }
+    a { color: var(--accent); }
+    .shell { width: min(1100px, calc(100vw - 2rem)); margin: 0 auto; padding: 2rem 0 4rem; }
+    .hero, .section { background: var(--panel); border: 1px solid rgba(216,202,184,.95); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .hero { padding: 2.2rem; }
+    .section { margin-top: 1.2rem; padding: 1.5rem; }
+    h1, h2, h3 { margin: 0 0 .8rem; line-height: 1.15; font-family: var(--serif); }
+    h1 { font-size: clamp(2.2rem, 4.6vw, 3.8rem); }
+    h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); }
+    h3 { font-size: 1.15rem; }
+    p { margin: 0 0 1rem; color: var(--muted); }
+    .grid { display: grid; gap: 1rem; }
+    .grid.two { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .grid.three { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .card { border: 1px solid rgba(216,202,184,.9); border-radius: 18px; background: linear-gradient(180deg, #fffaf3 0%, #f7f0e4 100%); padding: 1.1rem; }
+    .status { display: inline-block; padding: .2rem .55rem; border-radius: 999px; font-size: .76rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; margin-bottom: .75rem; }
+    .status.ok { color: var(--ok); background: rgba(22,101,52,.1); }
+    .status.warn { color: var(--warn); background: rgba(146,64,14,.12); }
+    code { font-family: var(--mono); background: rgba(15,118,110,.08); border-radius: 6px; padding: .12rem .35rem; color: var(--ink); }
+    pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-family: var(--mono); line-height: 1.55; }
+    .diagram, .code { border-radius: 18px; border: 1px solid var(--line); overflow-x: auto; }
+    .diagram { padding: 1rem; background: #1d2628; color: #e8efe8; }
+    .code { padding: 1rem; background: #f7f0e5; }
+    table { width: 100%; border-collapse: collapse; margin-top: .75rem; }
+    th, td { text-align: left; vertical-align: top; padding: .8rem .7rem; border-bottom: 1px solid rgba(216,202,184,.85); }
+    th { text-transform: uppercase; letter-spacing: .05em; font-size: .82rem; }
+    ul { margin: .4rem 0 0; padding-left: 1.1rem; color: var(--muted); }
+    li + li { margin-top: .35rem; }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <p><a href="../index.html">返回實驗首頁</a></p>
+      <h1>實驗 A: k3s + Cilium + Calico HostEndpoint</h1>
+      <p>
+        這一頁記錄目前最重要的相容性驗證：在 k3s 使用 Cilium 當 CNI 的前提下，Calico 是否能縮到只剩下
+        HostEndpoint 與 host firewall 功能，而且不去碰 pod networking 與 IP allocation。
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>架構與範圍</h2>
+      <div class="diagram"><pre>Jumpbox (20.110.199.106 / 10.70.0.10)
+   |
+   +--> k3s server 10.70.10.10
+   |      - k3s control-plane
+   |      - Cilium installed
+   |      - Calico datastore backed by Kubernetes API
+   |
+   +--> k3s agent-01 10.70.10.11
+   |      - Cilium node
+   |      - Calico policy-only active
+   |      - manual HostEndpoint on eth0
+   |
+   +--> k3s agent-02 10.70.10.12
+          - Cilium only
+          - used as control sample
+</pre></div>
+      <div class="grid three" style="margin-top: 1rem;">
+        <article class="card">
+          <h3>保留的東西</h3>
+          <ul>
+            <li>Cilium 仍是唯一 CNI。</li>
+            <li>k3s 節點與 service 網路保持原狀。</li>
+            <li>所有節點維持 <code>Ready</code>。</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>加入的東西</h3>
+          <ul>
+            <li>Calico CRD 與 policy-only 元件。</li>
+            <li>單一 worker 的 <code>calico-node</code>。</li>
+            <li>一個手動建立的 HostEndpoint。</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>刻意沒做的事</h3>
+          <ul>
+            <li>沒有讓 Calico 接管 <code>/etc/cni/net.d</code>。</li>
+            <li>沒有啟用 Calico IPPool。</li>
+            <li>沒有開啟全叢集 auto HostEndpoints。</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>叢集側 Calico 設定</h2>
+      <div class="grid two">
+        <article class="card">
+          <span class="status ok">已套用</span>
+          <h3>Policy-only overlay</h3>
+          <ul>
+            <li>以 upstream <code>calico-policy-only.yaml</code> 為基底。</li>
+            <li>刪除 <code>install-cni</code> init container。</li>
+            <li>移除與 host CNI 目錄相關的 volume/volumeMount。</li>
+            <li>加入 <code>NO_DEFAULT_POOLS=true</code>。</li>
+            <li>把 <code>calico-node</code> 限縮在 <code>hep-0605-0534-k3s-agent-01</code>。</li>
+          </ul>
+        </article>
+        <article class="card">
+          <span class="status ok">已套用</span>
+          <h3>Host policy</h3>
+          <ul>
+            <li>建立 baseline allow-all policy，selector 為 <code>host_protected == "true"</code>。</li>
+            <li>建立 <code>hep-0605-0534-k3s-agent-01-eth0</code> HostEndpoint。</li>
+            <li>HostEndpoint 標籤包含 <code>host_name</code>、<code>host_protected</code>、<code>platform</code>。</li>
+            <li>Host IP 綁定為 <code>10.70.10.11</code>。</li>
+          </ul>
+        </article>
+      </div>
+      <div class="code" style="margin-top: 1rem;"><pre>相關檔案
+
+manifests/calico/cilium-experiment/kustomization.yaml
+manifests/calico/cilium-experiment/patch-calico-node.yaml
+manifests/calico/cilium-experiment/patch-kube-controllers.yaml
+manifests/calico/cilium-experiment/10-host-baseline-allow-all.yaml
+manifests/calico/cilium-experiment/20-agent-01-hostendpoint.yaml
+manifests/calico/cilium-experiment/30-agent-01-deny-test-port-18081.yaml
+</pre></div>
+    </section>
+
+    <section class="section">
+      <h2>已完成測試</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>測試</th>
+            <th>方法</th>
+            <th>結果</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>CNI 未被接管</td>
+            <td>檢查 worker 上的 <code>/etc/cni/net.d</code></td>
+            <td>通過，只剩 <code>05-cilium.conflist</code>。</td>
+          </tr>
+          <tr>
+            <td>Calico IPPool 已停用</td>
+            <td>套用 <code>NO_DEFAULT_POOLS=true</code> 並刪除 default pool</td>
+            <td>通過，叢集中沒有 Calico IPPool。</td>
+          </tr>
+          <tr>
+            <td>叢集健康檢查</td>
+            <td><code>kubectl get nodes</code> + <code>cilium status --brief</code></td>
+            <td>通過，3 個節點都維持 <code>Ready</code>，Cilium 為 <code>OK</code>。</td>
+          </tr>
+          <tr>
+            <td>HostEndpoint 實際阻擋能力</td>
+            <td>在 <code>10.70.10.11:18081</code> 起 HTTP server，再套 deny policy</td>
+            <td>通過，套用 deny 前回應 <code>200</code>，套用後 timeout。</td>
+          </tr>
+          <tr>
+            <td>清理後狀態</td>
+            <td>刪除暫時的 deny policy</td>
+            <td>通過，叢集保持健康，只保留 baseline allow 與 HostEndpoint。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>目前結論</h2>
+      <div class="grid two">
+        <article class="card">
+          <span class="status ok">已證明</span>
+          <ul>
+            <li>Calico 可以在這個 lab 中被縮成 host policy footprint。</li>
+            <li>手動 HostEndpoint 可以綁到節點介面並對流量生效。</li>
+            <li>在單一 worker 節點上，這個模式目前沒有讓 Cilium 或 k3s 失穩。</li>
+          </ul>
+        </article>
+        <article class="card">
+          <span class="status warn">尚未完成</span>
+          <ul>
+            <li>還沒把同一套模型擴到所有 k3s 節點。</li>
+            <li>還沒完成 workload-to-VM 與 VM-to-VM 的 label policy 驗證。</li>
+            <li>還要驗證 standalone VM 的 Felix 能否穩定加入同一組策略平面。</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

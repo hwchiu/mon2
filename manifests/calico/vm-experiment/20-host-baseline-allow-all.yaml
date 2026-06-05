@@ -1,0 +1,14 @@
+apiVersion: crd.projectcalico.org/v1
+kind: GlobalNetworkPolicy
+metadata:
+  name: vm-experiment-host-baseline-allow
+spec:
+  order: 10
+  selector: vm_protected == "true"
+  types:
+    - Ingress
+    - Egress
+  ingress:
+    - action: Allow
+  egress:
+    - action: Allow

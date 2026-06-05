@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>實驗 B: Standalone VM + Calico Felix</title>
+  <style>
+    :root {
+      --bg: #f5efe6;
+      --panel: #fff9f1;
+      --ink: #202a2d;
+      --muted: #606a6e;
+      --line: #d8cab8;
+      --accent: #0f766e;
+      --ok: #166534;
+      --warn: #92400e;
+      --shadow: 0 18px 44px rgba(32, 42, 45, 0.08);
+      --radius: 22px;
+      --serif: "Noto Serif TC", "PMingLiU", Georgia, serif;
+      --sans: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top right, rgba(180,83,9,.12), transparent 24rem),
+        linear-gradient(180deg, #fbf6ee 0%, var(--bg) 100%);
+      font: 16px/1.7 var(--sans);
+    }
+    a { color: var(--accent); }
+    .shell { width: min(1100px, calc(100vw - 2rem)); margin: 0 auto; padding: 2rem 0 4rem; }
+    .hero, .section { background: var(--panel); border: 1px solid rgba(216,202,184,.95); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .hero { padding: 2.2rem; }
+    .section { margin-top: 1.2rem; padding: 1.5rem; }
+    h1, h2, h3 { margin: 0 0 .8rem; line-height: 1.15; font-family: var(--serif); }
+    h1 { font-size: clamp(2.2rem, 4.6vw, 3.8rem); }
+    h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); }
+    h3 { font-size: 1.15rem; }
+    p { margin: 0 0 1rem; color: var(--muted); }
+    .grid { display: grid; gap: 1rem; }
+    .grid.two { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .grid.three { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .card { border: 1px solid rgba(216,202,184,.9); border-radius: 18px; background: linear-gradient(180deg, #fff9f1 0%, #f8f0e4 100%); padding: 1.1rem; }
+    .status { display: inline-block; padding: .2rem .55rem; border-radius: 999px; font-size: .76rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; margin-bottom: .75rem; }
+    .status.ok { color: var(--ok); background: rgba(22,101,52,.1); }
+    .status.warn { color: var(--warn); background: rgba(146,64,14,.12); }
+    code { font-family: var(--mono); background: rgba(15,118,110,.08); border-radius: 6px; padding: .12rem .35rem; color: var(--ink); }
+    pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-family: var(--mono); line-height: 1.55; }
+    .code { padding: 1rem; border-radius: 18px; border: 1px solid var(--line); background: #f7f0e5; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin-top: .75rem; }
+    th, td { text-align: left; vertical-align: top; padding: .8rem .7rem; border-bottom: 1px solid rgba(216,202,184,.85); }
+    th { text-transform: uppercase; letter-spacing: .05em; font-size: .82rem; }
+    ul { margin: .4rem 0 0; padding-left: 1.1rem; color: var(--muted); }
+    li + li { margin-top: .35rem; }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <p><a href="../index.html">返回實驗首頁</a></p>
+      <h1>實驗 B: Standalone VM + Calico Felix</h1>
+      <p>
+        這一頁專門記錄非 Kubernetes 節點的 Azure VM 驗證流程。目標是把一台獨立 VM 納入相同的 Calico
+        HostEndpoint / GlobalNetworkPolicy 模型，同時保持它不是 k3s node、也不把它變成 Kubernetes worker。
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>目標 VM</h2>
+      <div class="grid three">
+        <article class="card">
+          <h3>主要 VM</h3>
+          <p><code>hep-0605-0534-legacy-01</code></p>
+          <p><code>10.70.20.20</code></p>
+          <p>目前已啟動，預設有 <code>sshd</code> 與 <code>nginx</code>。</p>
+        </article>
+        <article class="card">
+          <h3>預留 VM</h3>
+          <p><code>hep-0605-0534-legacy-02</code></p>
+          <p><code>10.70.20.21</code></p>
+          <p>後續可用於 VM-to-VM 或 label-based allow/deny 測試。</p>
+        </article>
+        <article class="card">
+          <h3>資料來源</h3>
+          <p>Calico 資料平面不在 VM 本機保存，Felix 會透過 kubeconfig 存取 k3s 的 Kubernetes datastore。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>部署設計</h2>
+      <div class="grid two">
+        <article class="card">
+          <span class="status ok">採用</span>
+          <h3>Felix-only 啟動模式</h3>
+          <ul>
+            <li>不在 VM 上啟動 Kubernetes 元件。</li>
+            <li>不把 VM 註冊成 k3s node。</li>
+            <li>以 <code>calico-node -felix</code> 當成 systemd 服務。</li>
+            <li>使用單獨的 service-account kubeconfig 存取叢集 datastore。</li>
+            <li>Ubuntu 22.04 lab 上額外補了 <code>libpcap.so.1</code> compatibility symlink，讓 extracted binary 可執行。</li>
+          </ul>
+        </article>
+        <article class="card">
+          <span class="status ok">採用</span>
+          <h3>策略模型</h3>
+          <ul>
+            <li>先建立一個只用於 datastore 對應的 Kubernetes <code>Node</code> placeholder。</li>
+            <li>再建立對應的 Calico <code>Node</code> 物件。</li>
+            <li>再建立對應的 VM HostEndpoint。</li>
+            <li>先套 baseline allow，再套暫時性的 deny 測試規則。</li>
+            <li>在 VM 端額外設定 <code>FELIX_XDPENABLED=false</code>，避免 binary-only 安裝時的 XDP 雜訊。</li>
+          </ul>
+        </article>
+      </div>
+      <div class="code" style="margin-top: 1rem;"><pre>預計使用的 repo 檔案
+
+manifests/calico/vm-experiment/00-vm-agent-rbac.yaml
+manifests/calico/vm-experiment/05-legacy-01-k8s-node.yaml
+manifests/calico/vm-experiment/10-legacy-01-node.yaml
+manifests/calico/vm-experiment/20-host-baseline-allow-all.yaml
+manifests/calico/vm-experiment/30-legacy-01-hostendpoint.yaml
+manifests/calico/vm-experiment/40-legacy-01-deny-http.yaml
+</pre></div>
+    </section>
+
+    <section class="section">
+      <h2>執行狀態</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>步驟</th>
+            <th>狀態</th>
+            <th>說明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>VM 存活與 SSH 路徑確認</td>
+            <td>完成</td>
+            <td><code>legacy-01</code> 已可透過 jumpbox 存取，且確認有 <code>eth0=10.70.20.20</code> 與 <code>nginx:80</code>。</td>
+          </tr>
+          <tr>
+            <td>Calico RBAC / kubeconfig 規劃</td>
+            <td>完成</td>
+            <td>已建立專用 service account，並綁定現有 <code>ClusterRole/calico-node</code>。</td>
+          </tr>
+          <tr>
+            <td>Kubernetes Node placeholder</td>
+            <td>完成</td>
+            <td>已建立 <code>NoSchedule</code> 且 <code>SchedulingDisabled</code> 的 placeholder，用來滿足 KDD 對 Calico Node 的對應需求。</td>
+          </tr>
+          <tr>
+            <td>Felix 安裝</td>
+            <td>完成</td>
+            <td>已把 <code>calico-node -felix</code> 以 systemd 方式啟動在 <code>legacy-01</code>，並用專屬 kubeconfig 連回 k3s datastore。</td>
+          </tr>
+          <tr>
+            <td>VM HostEndpoint 與 deny 測試</td>
+            <td>完成</td>
+            <td>已建立 VM HostEndpoint，並驗證 port 80 在 deny policy 套用後 timeout、刪除 deny 後恢復 <code>200</code>。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>第一輪驗證結果</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>測試</th>
+            <th>方法</th>
+            <th>結果</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>VM 可被 Calico 納管</td>
+            <td>建立 service account kubeconfig、placeholder Kubernetes Node、Calico Node、Felix systemd</td>
+            <td>通過，Felix 服務為 <code>active</code>，HostEndpoint 狀態顯示 <code>up</code>。</td>
+          </tr>
+          <tr>
+            <td>HostEndpoint 維持 baseline allow</td>
+            <td>套用 VM baseline allow policy 與 HostEndpoint 後，從 jumpbox 存取 <code>10.70.20.20:80</code></td>
+            <td>通過，HTTP 回應仍為 <code>200</code>。</td>
+          </tr>
+          <tr>
+            <td>Deny policy 生效</td>
+            <td>套用 <code>vm-experiment-deny-legacy-01-http</code> 後，從 jumpbox 再次存取 <code>:80</code></td>
+            <td>通過，請求在 5 秒內 timeout，HTTP code 為 <code>000</code>。</td>
+          </tr>
+          <tr>
+            <td>刪除 deny 後恢復</td>
+            <td>刪除暫時的 deny policy，再從 jumpbox 存取 <code>:80</code></td>
+            <td>通過，HTTP 回應恢復為 <code>200</code>。</td>
+          </tr>
+          <tr>
+            <td>叢集基線未受影響</td>
+            <td>檢查 k3s 節點狀態與 <code>cilium status --brief</code></td>
+            <td>通過，3 個真實 k3s 節點仍是 <code>Ready</code>，Cilium 為 <code>OK</code>。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>目前狀態與後續</h2>
+      <div class="grid two">
+        <article class="card">
+          <span class="status ok">現在成立</span>
+          <ul>
+            <li>第一台 standalone VM 已成功納入同一套 Calico host policy 模型。</li>
+            <li>非 Kubernetes workload 的 host firewall 已可用 label 與 GlobalNetworkPolicy 控制。</li>
+            <li>Felix 目前會持續從 k3s datastore 收到其他節點的 host metadata 更新。</li>
+          </ul>
+        </article>
+        <article class="card">
+          <span class="status warn">下一步</span>
+          <ul>
+            <li>把相同做法擴到 <code>legacy-02</code>，補上 VM-to-VM 測試。</li>
+            <li>加入 workload-to-VM 的 selector-based allow/deny 驗證。</li>
+            <li>評估是否要把 VM 端安裝流程腳本化，避免重複手工設定。</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
