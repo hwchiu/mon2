@@ -1,0 +1,30 @@
+#cloud-config
+package_update: true
+package_upgrade: false
+packages:
+  - ca-certificates
+  - curl
+  - jq
+  - netcat-openbsd
+  - tcpdump
+  - traceroute
+write_files:
+  - path: /usr/local/bin/bootstrap-k3s-agent.sh
+    permissions: "0755"
+    content: |
+      #!/usr/bin/env bash
+      set -euxo pipefail
+
+      mkdir -p /etc/rancher/k3s
+      cat >/etc/rancher/k3s/config.yaml <<'EOF'
+      server: https://${server_private_ip}:6443
+      token: ${k3s_token}
+      node-ip: ${node_private_ip}
+      EOF
+%{ if k3s_version != "" ~}
+      export INSTALL_K3S_VERSION='${k3s_version}'
+%{ endif ~}
+      export INSTALL_K3S_EXEC='agent'
+      curl -sfL https://get.k3s.io | sh -
+runcmd:
+  - [bash, -lc, "/usr/local/bin/bootstrap-k3s-agent.sh > /var/log/bootstrap-k3s-agent.log 2>&1"]

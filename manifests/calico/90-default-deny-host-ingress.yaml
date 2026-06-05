@@ -1,0 +1,9 @@
+apiVersion: crd.projectcalico.org/v1
+kind: GlobalNetworkPolicy
+metadata:
+  name: 90-default-deny-host-ingress
+spec:
+  order: 1000
+  selector: host_protected == "true"
+  types:
+    - Ingress

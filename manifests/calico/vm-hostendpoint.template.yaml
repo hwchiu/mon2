@@ -1,0 +1,14 @@
+apiVersion: crd.projectcalico.org/v1
+kind: HostEndpoint
+metadata:
+  name: REPLACE_ME_HOSTNAME-eth0
+  labels:
+    env: lab
+    host_protected: "true"
+    endpoint_role: legacy-api
+    platform: vm
+spec:
+  node: REPLACE_ME_FELIX_HOSTNAME
+  interfaceName: eth0
+  expectedIPs:
+    - REPLACE_ME_PRIMARY_IP

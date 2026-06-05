@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hep-lab
+  labels:
+    lab: calico-hep
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: access-client
+  namespace: hep-lab
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: access-client
+  template:
+    metadata:
+      labels:
+        app: access-client
+        access: legacy-http
+    spec:
+      containers:
+        - name: curl
+          image: curlimages/curl:8.9.1
+          command: ["sleep", "infinity"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blocked-client
+  namespace: hep-lab
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blocked-client
+  template:
+    metadata:
+      labels:
+        app: blocked-client
+        access: blocked
+    spec:
+      containers:
+        - name: curl
+          image: curlimages/curl:8.9.1
+          command: ["sleep", "infinity"]

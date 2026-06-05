@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: calico-node
+  namespace: kube-system
+spec:
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/os: linux
+        kubernetes.io/hostname: hep-0605-0534-k3s-agent-01
+      initContainers:
+        - name: install-cni
+          $patch: delete
+      containers:
+        - name: calico-node
+          env:
+            - name: NO_DEFAULT_POOLS
+              value: "true"
+          volumeMounts:
+            - name: cni-net-dir
+              $patch: delete
+            - name: cni-log-dir
+              $patch: delete
+      volumes:
+        - name: cni-bin-dir
+          $patch: delete
+        - name: cni-net-dir
+          $patch: delete
+        - name: cni-log-dir
+          $patch: delete

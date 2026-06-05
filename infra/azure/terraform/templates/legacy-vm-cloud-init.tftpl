@@ -1,0 +1,19 @@
+#cloud-config
+package_update: true
+package_upgrade: false
+packages:
+  - curl
+  - jq
+  - netcat-openbsd
+  - nginx
+write_files:
+  - path: /usr/local/bin/bootstrap-legacy.sh
+    permissions: "0755"
+    content: |
+      #!/usr/bin/env bash
+      set -euxo pipefail
+      systemctl enable nginx
+      printf 'legacy host %s\n' '${vm_name}' > /var/www/html/index.html
+      systemctl restart nginx
+runcmd:
+  - [bash, -lc, "/usr/local/bin/bootstrap-legacy.sh > /var/log/bootstrap-legacy.log 2>&1"]

@@ -1,0 +1,17 @@
+apiVersion: crd.projectcalico.org/v1
+kind: GlobalNetworkPolicy
+metadata:
+  name: 10-allow-labelled-workload-to-legacy
+spec:
+  order: 20
+  selector: endpoint_role == "legacy-api"
+  types:
+    - Ingress
+  ingress:
+    - action: Allow
+      protocol: TCP
+      source:
+        selector: access == "legacy-http"
+      destination:
+        ports:
+          - 80

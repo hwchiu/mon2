@@ -1,0 +1,15 @@
+apiVersion: crd.projectcalico.org/v1
+kind: GlobalNetworkPolicy
+metadata:
+  name: cilium-experiment-deny-agent-01-port-18081
+spec:
+  order: 5
+  selector: host_name == "hep-0605-0534-k3s-agent-01"
+  types:
+    - Ingress
+  ingress:
+    - action: Deny
+      protocol: TCP
+      destination:
+        ports:
+          - 18081

@@ -1,0 +1,22 @@
+apiVersion: crd.projectcalico.org/v1
+kind: GlobalNetworkPolicy
+metadata:
+  name: 00-host-baseline-allow
+spec:
+  order: 10
+  selector: host_protected == "true"
+  types:
+    - Ingress
+    - Egress
+  ingress:
+    - action: Allow
+      protocol: TCP
+      source:
+        nets:
+          - REPLACE_ME_ADMIN_CIDR
+      destination:
+        ports:
+          - 22
+  egress:
+    - action: Allow
+      destination: {}

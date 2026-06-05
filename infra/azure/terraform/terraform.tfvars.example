@@ -1,0 +1,18 @@
+subscription_id    = ""
+location           = "eastus2"
+resource_group_name = "rg-calico-hep-lab"
+name_prefix        = "hep-lab"
+
+admin_cidr          = "203.0.113.10/32"
+ssh_public_key_path = "/home/ubuntu/.ssh/id_ed25519.pub"
+admin_username      = "azureuser"
+k3s_vm_size         = "Standard_B2s"
+
+k3s_agent_count = 2
+legacy_vm_count = 2
+
+k3s_version    = ""
+cilium_version = "1.19.4"
+
+cluster_cidr = "10.42.0.0/16"
+service_cidr = "10.43.0.0/16"

@@ -1,0 +1,74 @@
+#cloud-config
+package_update: true
+package_upgrade: false
+packages:
+  - ca-certificates
+  - curl
+  - jq
+  - netcat-openbsd
+  - tcpdump
+  - traceroute
+write_files:
+  - path: /usr/local/bin/bootstrap-k3s-server.sh
+    permissions: "0755"
+    content: |
+      #!/usr/bin/env bash
+      set -euxo pipefail
+
+      mkdir -p /etc/rancher/k3s
+      cat >/etc/rancher/k3s/config.yaml <<'EOF'
+      token: ${k3s_token}
+      write-kubeconfig-mode: "0644"
+      node-ip: ${server_private_ip}
+      flannel-backend: none
+      disable-network-policy: true
+      cluster-cidr: ${cluster_cidr}
+      service-cidr: ${service_cidr}
+      tls-san:
+        - ${server_private_ip}
+      disable:
+        - servicelb
+        - traefik
+      EOF
+%{ if k3s_version != "" ~}
+      export INSTALL_K3S_VERSION='${k3s_version}'
+%{ endif ~}
+      export INSTALL_K3S_EXEC='server'
+      curl -sfL https://get.k3s.io | sh -
+
+      until systemctl is-active --quiet k3s; do
+        sleep 5
+      done
+
+      export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+      export HOME=/root
+      export XDG_CACHE_HOME=/root/.cache
+      mkdir -p "$${XDG_CACHE_HOME}"
+      timeout 600 bash -c 'until kubectl get nodes >/dev/null 2>&1; do sleep 5; done'
+
+      mkdir -p /home/${admin_username}/.kube
+      cp /etc/rancher/k3s/k3s.yaml /home/${admin_username}/.kube/config
+      chown -R ${admin_username}:${admin_username} /home/${admin_username}/.kube
+
+      timeout 900 bash -c 'until [ "$(kubectl get nodes --no-headers 2>/dev/null | wc -l)" -ge ${expected_node_count} ]; do sleep 10; done' || true
+
+      CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
+      CLI_ARCH=amd64
+      if [ "$(uname -m)" = "aarch64" ]; then
+        CLI_ARCH=arm64
+      fi
+      curl -L --fail --remote-name-all https://github.com/cilium/cilium-cli/releases/download/$${CILIUM_CLI_VERSION}/cilium-linux-$${CLI_ARCH}.tar.gz{,.sha256sum}
+      sha256sum --check cilium-linux-$${CLI_ARCH}.tar.gz.sha256sum
+      tar xzvfC cilium-linux-$${CLI_ARCH}.tar.gz /usr/local/bin
+      rm cilium-linux-$${CLI_ARCH}.tar.gz{,.sha256sum}
+
+      cilium install \
+        --version ${cilium_version} \
+        --wait \
+        --set ipam.operator.clusterPoolIPv4PodCIDRList[0]=${cluster_cidr} \
+        --set k8sServiceHost=${server_private_ip} \
+        --set k8sServicePort=6443
+      cilium status --wait
+      kubectl get nodes -o wide
+runcmd:
+  - [bash, -lc, "/usr/local/bin/bootstrap-k3s-server.sh > /var/log/bootstrap-k3s-server.log 2>&1"]

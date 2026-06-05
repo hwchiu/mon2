@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calico-kube-controllers
+  namespace: kube-system
+spec:
+  template:
+    spec:
+      containers:
+        - name: calico-kube-controllers
+          env:
+            - name: ENABLED_CONTROLLERS
+              value: node
