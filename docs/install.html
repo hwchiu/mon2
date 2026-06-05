@@ -21,55 +21,75 @@
       <span class="eyebrow">Setup Guide</span>
       <h1>安裝與接入流程</h1>
       <p>
-        這一頁只描述目前已完成且可重放的 setup。範圍包含第一個 Kubernetes 叢集、
-        Cilium CNI、Calico policy-only 安裝，以及兩台 standalone VM 接入同一個
-        Calico control plane 的流程。
+        這一頁只寫目前已完成且可重放的 setup。重點是兩個 Cilium 叢集，但只有一個 Calico control plane：
+        cluster-1 內跑 Calico policy-only；cluster-2 與兩台 standalone VM 都以 external host 方式接回 cluster-1。
       </p>
     </section>
 
     <section class="section">
       <h2>目前已完成的 setup 範圍</h2>
-      <div class="grid three">
+      <div class="grid four">
         <article class="card">
           <span class="status ok">完成</span>
           <h3>Cluster-1</h3>
-          <p><code>hep-0605-0534-k3s</code> 已在 Azure VM lab 上運行，k3s 本體正常。</p>
+          <p><code>hep-0605-0534-k3s</code> 已在 Azure VM lab 上運作。</p>
         </article>
         <article class="card">
           <span class="status ok">完成</span>
-          <h3>Cilium CNI</h3>
-          <p>Cilium 仍是唯一 CNI，負責 pod 網路與 datapath。</p>
+          <h3>Cluster-2</h3>
+          <p><code>hep-0605-0534-k3s2</code> 已建立，叢集側仍只有 Cilium。</p>
         </article>
         <article class="card">
           <span class="status ok">完成</span>
-          <h3>Calico Policy-Only</h3>
-          <p>Calico 只提供 HostEndpoint、GlobalNetworkPolicy 與 Felix，不接管 pod IPAM。</p>
+          <h3>Standalone VMs</h3>
+          <p><code>legacy-01</code> 與 <code>legacy-02</code> 都已接入 Felix。</p>
+        </article>
+        <article class="card">
+          <span class="status ok">完成</span>
+          <h3>Centralized Calico</h3>
+          <p>HostEndpoint 與 host policy metadata 仍只由 cluster-1 發佈。</p>
         </article>
       </div>
     </section>
 
     <section class="section">
-      <h2>Step 1. Azure Lab 與 k3s 基底</h2>
+      <h2>Step 1. 用 Terraform 建 Azure 基底</h2>
       <p>
-        目前的 lab 是用 Terraform 建立 Azure jumpbox、k3s 節點與兩台 legacy VM。
-        k3s server 啟動時已關閉 Flannel 與內建 network policy controller，讓 Cilium 成為唯一 CNI。
+        Terraform 會建立 jumpbox、cluster-1、兩台 legacy VM，並可選擇性加開第二個 k3s cluster。
+        本次環境已經把 <code>cluster2_enabled</code> 打開，建立第二個叢集所在的 <code>10.70.30.0/24</code> 子網。
       </p>
       <div class="code"><pre>infra/azure/terraform/
-infra/azure/terraform/templates/k3s-server-cloud-init.tftpl
-infra/azure/terraform/templates/k3s-agent-cloud-init.tftpl
 
-重點:
-- k3s server: --flannel-backend=none
-- k3s server: --disable-network-policy
-- 安裝完成後由 server 節點安裝 Cilium
+關鍵變數:
+- cluster2_enabled = true
+- cluster2_agent_count = 2
+- cluster2_subnet_cidr = "10.70.30.0/24"
+- cluster2_cluster_cidr = "10.52.0.0/16"
+- cluster2_service_cidr = "10.53.0.0/16"
 </pre></div>
     </section>
 
     <section class="section">
-      <h2>Step 2. 在 Cilium 叢集上安裝 Calico Policy-Only</h2>
+      <h2>Step 2. 讓 k3s 只保留 Cilium 當 CNI</h2>
       <p>
-        叢集側的 Calico 安裝不是完整 CNI 佈署，而是從官方 <code>calico-policy-only.yaml</code> 出發，
-        再用本 repo 的 patch 把 CNI 相關動作拿掉，確保它不會寫入新的 CNI config。
+        兩個 k3s cluster 的 server cloud-init 都會先把 Flannel 與內建 network policy controller 關掉，
+        再由 server 節點安裝 Cilium。這樣 pod networking、service routing 與 datapath 都還是由 Cilium 負責。
+      </p>
+      <div class="code"><pre>infra/azure/terraform/templates/k3s-server-cloud-init.tftpl
+infra/azure/terraform/templates/k3s-agent-cloud-init.tftpl
+
+重點參數:
+- --flannel-backend=none
+- --disable-network-policy
+- cilium install --wait
+</pre></div>
+    </section>
+
+    <section class="section">
+      <h2>Step 3. 在 cluster-1 的 Cilium 上安裝 Calico policy-only</h2>
+      <p>
+        這一步不是把 Calico 當 CNI 裝進去，而是保留 HostEndpoint、GlobalNetworkPolicy、
+        kube-controllers、Typha 與 Felix 需要的元件，同時移掉所有會接管 CNI 或寫入 CNI config 的部分。
       </p>
       <div class="grid two">
         <article class="card">
@@ -78,33 +98,33 @@ infra/azure/terraform/templates/k3s-agent-cloud-init.tftpl
             <li><code>manifests/calico/cilium-experiment/kustomization.yaml</code></li>
             <li><code>manifests/calico/cilium-experiment/patch-calico-node.yaml</code></li>
             <li><code>manifests/calico/cilium-experiment/patch-kube-controllers.yaml</code></li>
+            <li><code>manifests/calico/cilium-experiment/10-host-baseline-allow-all.yaml</code></li>
           </ul>
         </article>
         <article class="card">
-          <h3>本次 patch 目的</h3>
+          <h3>這層 patch 在做什麼</h3>
           <ul>
             <li>移除 <code>install-cni</code> init container。</li>
-            <li>移除 host CNI 目錄 mount，避免寫入 <code>/etc/cni/net.d</code>。</li>
-            <li>先把 <code>calico-node</code> 限縮在單一 worker 驗證。</li>
-            <li>關閉 default pools，避免 Calico IPAM 介入。</li>
+            <li>移除 host CNI 目錄 mount，避免寫進 <code>/etc/cni/net.d</code>。</li>
+            <li>保留 Calico CRDs 與 host policy 路徑。</li>
+            <li>避免建立 default pools，不讓 Calico IPAM 介入。</li>
           </ul>
         </article>
       </div>
       <div class="code" style="margin-top: 1rem;"><pre>kubectl --context=hep-0605-0534-k3s apply -k manifests/calico/cilium-experiment
 kubectl --context=hep-0605-0534-k3s apply -f manifests/calico/cilium-experiment/10-host-baseline-allow-all.yaml
-kubectl --context=hep-0605-0534-k3s apply -f manifests/calico/cilium-experiment/20-agent-01-hostendpoint.yaml
 </pre></div>
     </section>
 
     <section class="section">
-      <h2>Step 3. 讓 standalone VM 接到 cluster-1 的 Calico control plane</h2>
+      <h2>Step 4. 接入 standalone VMs</h2>
       <p>
-        VM 不加入 k3s，也不跑 kubelet。每台 VM 只安裝 <code>calico-node -felix</code>，
-        並透過專用 kubeconfig 連回第一個叢集的 Kubernetes datastore。
+        兩台 legacy VM 都不跑 kubelet，也不是叢集節點。它們只安裝 <code>calico-node -felix</code>，
+        再透過一份只用於 datastore 存取的 kubeconfig 連回 cluster-1。
       </p>
       <div class="grid two">
         <article class="card">
-          <h3>Cluster 端物件</h3>
+          <h3>Cluster-1 端物件</h3>
           <ul>
             <li><code>manifests/calico/vm-experiment/00-vm-agent-rbac.yaml</code></li>
             <li><code>05-legacy-01-k8s-node.yaml</code> / <code>06-legacy-02-k8s-node.yaml</code></li>
@@ -113,33 +133,80 @@ kubectl --context=hep-0605-0534-k3s apply -f manifests/calico/cilium-experiment/
           </ul>
         </article>
         <article class="card">
-          <h3>VM 端重點</h3>
+          <h3>VM 端環境變數</h3>
           <ul>
-            <li>systemd 服務只跑 <code>calico-node -felix</code>。</li>
+            <li><code>FELIX_DATASTORETYPE=kubernetes</code></li>
+            <li><code>KUBECONFIG=/etc/calico/kubeconfig</code></li>
             <li><code>CALICO_NETWORKING_BACKEND=none</code></li>
             <li><code>NO_DEFAULT_POOLS=true</code></li>
             <li><code>FELIX_XDPENABLED=false</code></li>
           </ul>
         </article>
       </div>
-      <div class="code" style="margin-top: 1rem;"><pre>FELIX_DATASTORETYPE=kubernetes
-KUBECONFIG=/etc/calico/kubeconfig
-CALICO_NODENAME=hep-0605-0534-legacy-01
-CALICO_IP=10.70.20.20
-NO_DEFAULT_POOLS=true
-CALICO_NETWORKING_BACKEND=none
-FELIX_HEALTHENABLED=true
-FELIX_LOGSEVERITYSCREEN=Info
-FELIX_XDPENABLED=false
+    </section>
+
+    <section class="section">
+      <h2>Step 5. 建第二個 k3s cluster</h2>
+      <p>
+        第二個叢集本身仍是正常的 k3s + Cilium。這裡的重點不是在 cluster-2 內再裝一套 Calico，
+        而是先把它當成獨立的 Cilium 叢集建立好，確保它自己的 kube-api 與 datapath 正常。
+      </p>
+      <div class="code"><pre>terraform -chdir=infra/azure/terraform plan \
+  -var='cluster2_enabled=true' \
+  -var='cluster2_agent_count=2' \
+  -out=tfplan-cluster2
+
+terraform -chdir=infra/azure/terraform apply tfplan-cluster2
+
+重要輸出:
+- cluster2_server_private_ip = 10.70.30.10
+- cluster2_agent_private_ips = 10.70.30.11, 10.70.30.12
+- ssh_cluster2_server_via_jumpbox_command
+- ssh_cluster2_kubeapi_tunnel_command
+</pre></div>
+    </section>
+
+    <section class="section">
+      <h2>Step 6. 把 cluster-2 nodes 當 external hosts 接入 cluster-1</h2>
+      <p>
+        這是這次新增的核心做法。cluster-2 內不裝 Calico operator、不裝 Calico CNI，
+        只在每個 node 上額外放一個 Felix-only <code>calico-node</code> systemd 服務，
+        讓它們全部接回 cluster-1 的 Calico datastore。
+      </p>
+      <div class="grid two">
+        <article class="card">
+          <h3>自動化資產</h3>
+          <ul>
+            <li><code>scripts/onboard-external-k8s-hosts.sh</code></li>
+            <li><code>manifests/calico/external-k8s-hosts/README.md</code></li>
+            <li><code>manifests/calico/vm-experiment/20-host-baseline-allow-all.yaml</code></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>腳本會建立的內容</h3>
+          <ul>
+            <li>cluster-1 內的 placeholder Kubernetes Nodes</li>
+            <li>對應的 Calico Node 物件</li>
+            <li>對應的 HostEndpoint 物件</li>
+            <li>cluster-2 每台 node 上的 <code>calico-node -felix</code> service</li>
+          </ul>
+        </article>
+      </div>
+      <div class="code" style="margin-top: 1rem;"><pre>./scripts/onboard-external-k8s-hosts.sh \
+  --cluster1-kubeconfig /home/ubuntu/.kube/hep-0605-0534-k3s.yaml \
+  --cluster2-kubeconfig /home/ubuntu/.kube/hep-0605-0534-k3s2.yaml \
+  --cluster1-api-server https://10.70.10.10:6443 \
+  --jumpbox azureuser@20.110.199.106 \
+  --cluster-id hep-0605-0534-k3s2
 </pre></div>
       <p style="margin-top: 1rem;">
-        目前兩台 VM 都已完成接入，且 placeholder Kubernetes Node 已拿掉 <code>kubernetes.io/os</code> 標籤，
-        避免 Cilium DaemonSet 把 fake node 算進 desired replicas。
+        腳本修正後已改為從安裝腳本所在目錄讀取 binary 與 kubeconfig，不再依賴 <code>sudo</code>
+        執行後的 <code>$HOME</code>，因此可以穩定把 Felix 佈到 cluster-2 三個節點上。
       </p>
     </section>
 
     <section class="section">
-      <h2>Step 4. 環境完成定義</h2>
+      <h2>Step 7. 目前完成定義</h2>
       <table>
         <thead>
           <tr>
@@ -150,50 +217,41 @@ FELIX_XDPENABLED=false
         </thead>
         <tbody>
           <tr>
-            <td>1 個 Kubernetes 叢集</td>
-            <td>k3s server + 2 agent 均為 <code>Ready</code></td>
+            <td>2 個 Kubernetes 叢集</td>
+            <td>cluster-1 與 cluster-2 都已建立，兩邊皆由 Cilium 提供 pod networking</td>
             <td>完成</td>
           </tr>
           <tr>
             <td>2 台 standalone VM</td>
-            <td><code>legacy-01</code>、<code>legacy-02</code> 均存在且 SSH 可達</td>
+            <td><code>legacy-01</code>、<code>legacy-02</code> 均存在且 Felix 為 <code>active</code></td>
             <td>完成</td>
           </tr>
           <tr>
-            <td>VM 均接入 cluster-1 Calico control plane</td>
-            <td>兩台 VM 的 <code>calico-node</code> systemd 服務均為 <code>active</code></td>
+            <td>單一 Calico control plane</td>
+            <td>仍只有 cluster-1 發佈 Calico metadata 與 host policy</td>
             <td>完成</td>
           </tr>
           <tr>
-            <td>Calico 不接管 CNI</td>
-            <td>Cilium 仍是唯一 CNI；Calico 只保留 policy metadata 與 HostEndpoint 路徑</td>
+            <td>cluster-2 nodes 納管到 cluster-1</td>
+            <td>3 個 cluster-2 nodes 已以 external hosts 模式接入 cluster-1</td>
+            <td>完成</td>
+          </tr>
+          <tr>
+            <td>HostEndpoint 路徑</td>
+            <td>目前共有 6 個 HostEndpoint，其中 5 個屬於 external hosts</td>
             <td>完成</td>
           </tr>
         </tbody>
       </table>
     </section>
 
-    <section class="section">
-      <h2>下一階段的 install 目標</h2>
-      <div class="note">
-        <p>
-          下一步會是第二個 Kubernetes 叢集，也就是你提到的第二個 <code>TKS / cluster-2</code> 目標。
-          這一階段的安裝方向先定義為：<code>Cilium</code> 仍負責 CNI，<code>Calico</code> 只提供 policy/identity 相關元件。
-        </p>
-        <p>
-          但「由第一個叢集直接作為第二個叢集的集中式 Calico 管理平面」這件事，我在文件裡會先標示為
-          design target，而不是已驗證完成的能力，避免把目前只對 standalone VM 成立的控制面模型誤寫成多叢集已完成。
-        </p>
-      </div>
-    </section>
-
     <section class="footer">
-      <h2>細節頁與原始文件</h2>
+      <h2>補充閱讀</h2>
       <p>
-        若需要回看 setup 細節，可參考：
-        <a href="./experiments/k3s-cilium-hostendpoint.html">k3s + Cilium + Calico HostEndpoint 細節頁</a>、
-        <a href="./experiments/standalone-vm-hostendpoint.html">Standalone VM 細節頁</a>、
-        <a href="./calico-hostendpoint-execution-runbook.md">Runbook</a>。
+        若要看更接近逐步操作的原始材料，可參考
+        <a href="./experiments/k3s-cilium-hostendpoint.html">cluster-1 setup archive</a>、
+        <a href="./experiments/standalone-vm-hostendpoint.html">VM setup archive</a>、
+        <a href="./calico-hostendpoint-execution-runbook.md">runbook</a>。
       </p>
     </section>
   </main>

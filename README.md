@@ -4,6 +4,8 @@ This repository provisions an Azure VM lab with Terraform to test whether Calico
 
 - k3s nodes that use Cilium as the Kubernetes CNI
 - standalone Azure Linux VMs
+- a second Kubernetes cluster whose nodes are onboarded into the first cluster's
+  Calico control plane as external hosts
 
 Start with [docs/calico-hostendpoint-azure-validation-plan.md](/home/ubuntu/calico/docs/calico-hostendpoint-azure-validation-plan.md), then use [infra/azure](/home/ubuntu/calico/infra/azure/README.md) for provisioning and [manifests/calico](/home/ubuntu/calico/manifests/calico/README.md) for policy examples.
 

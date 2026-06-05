@@ -5,10 +5,11 @@ The Azure lab is now provisioned with Terraform under [infra/azure/terraform](/h
 ## What Terraform creates
 
 - one public jumpbox VM
-- one k3s server VM
-- a configurable number of k3s agent VMs
+- one primary k3s server VM
+- a configurable number of primary k3s agent VMs
+- an optional second k3s cluster on its own subnet
 - a configurable number of standalone legacy VMs
-- one VNet with management, k3s, and legacy subnets
+- one VNet with management, primary k3s, optional secondary k3s, and legacy subnets
 - NSGs that keep public SSH limited to the jumpbox
 
 The k3s server boots with Flannel disabled and the built-in network policy controller disabled. After the k3s API is up, the server installs Cilium and waits for it to become healthy. Legacy VMs are bootstrapped with NGINX and basic troubleshooting tools.
@@ -21,6 +22,7 @@ The k3s server boots with Flannel disabled and the built-in network policy contr
 - `terraform/outputs.tf`: IPs and helper commands
 - `terraform/terraform.tfvars.example`: example input values
 - `terraform/templates/*.tftpl`: cloud-init templates for the jumpbox, k3s nodes, and legacy VMs
+- `../../scripts/onboard-external-k8s-hosts.sh`: post-provision onboarding for cluster-2 nodes as Calico-managed external hosts
 
 ## Usage
 
@@ -52,6 +54,13 @@ terraform apply
 terraform output
 ```
 
+If you enable the optional second cluster, Terraform also returns:
+
+- the second cluster server private IP
+- the second cluster agent private IPs
+- an SSH command for the second cluster server
+- a kube-api tunnel command that binds local port `26443`
+
 6. Tear the lab down when finished:
 
 ```bash
@@ -63,6 +72,7 @@ terraform destroy
 - The k3s server writes `/home/<admin_username>/.kube/config` for convenience.
 - Bootstrap logs are written to `/var/log/bootstrap-k3s-server.log`, `/var/log/bootstrap-k3s-agent.log`, and `/var/log/bootstrap-legacy.log`.
 - The configuration intentionally does not install Calico. That remains manual because the Calico-on-Cilium combination is the subject under test.
+- If you enable the second cluster, it is still Cilium-only. To bring its nodes under cluster-1 Calico host policy, use `scripts/onboard-external-k8s-hosts.sh` after the cluster is healthy.
 
 ## Dependencies
 

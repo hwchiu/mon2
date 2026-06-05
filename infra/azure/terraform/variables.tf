@@ -76,6 +76,18 @@ variable "legacy_subnet_cidr" {
   default     = "10.70.20.0/24"
 }
 
+variable "cluster2_subnet_name" {
+  description = "Subnet name for the optional second k3s cluster."
+  type        = string
+  default     = "snet-k3s-2"
+}
+
+variable "cluster2_subnet_cidr" {
+  description = "CIDR for the optional second k3s cluster."
+  type        = string
+  default     = "10.70.30.0/24"
+}
+
 variable "admin_cidr" {
   description = "Source CIDR allowed to SSH to the jumpbox."
   type        = string
@@ -110,6 +122,18 @@ variable "legacy_vm_size" {
   default     = "Standard_B2s"
 }
 
+variable "cluster2_enabled" {
+  description = "Whether to provision the optional second k3s cluster."
+  type        = bool
+  default     = false
+}
+
+variable "cluster2_vm_size" {
+  description = "Azure VM size for the second k3s cluster."
+  type        = string
+  default     = "Standard_B2s"
+}
+
 variable "k3s_agent_count" {
   description = "Number of k3s agent nodes."
   type        = number
@@ -118,6 +142,12 @@ variable "k3s_agent_count" {
 
 variable "legacy_vm_count" {
   description = "Number of standalone legacy VMs."
+  type        = number
+  default     = 2
+}
+
+variable "cluster2_agent_count" {
+  description = "Number of agent nodes in the optional second k3s cluster."
   type        = number
   default     = 2
 }
@@ -144,4 +174,16 @@ variable "service_cidr" {
   description = "Service CIDR passed to k3s."
   type        = string
   default     = "10.43.0.0/16"
+}
+
+variable "cluster2_cluster_cidr" {
+  description = "Pod CIDR passed to the second k3s cluster and its Cilium install."
+  type        = string
+  default     = "10.52.0.0/16"
+}
+
+variable "cluster2_service_cidr" {
+  description = "Service CIDR passed to the second k3s cluster."
+  type        = string
+  default     = "10.53.0.0/16"
 }

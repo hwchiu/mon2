@@ -9,10 +9,12 @@ locals {
 
   ssh_public_key = trimspace(file(var.ssh_public_key_path))
 
-  jumpbox_name          = "${var.name_prefix}-jumpbox"
-  k3s_server_name       = "${var.name_prefix}-k3s-server-0"
-  jumpbox_private_ip    = cidrhost(var.management_subnet_cidr, 10)
-  k3s_server_private_ip = cidrhost(var.cluster_subnet_cidr, 10)
+  jumpbox_name               = "${var.name_prefix}-jumpbox"
+  k3s_server_name            = "${var.name_prefix}-k3s-server-0"
+  cluster2_server_name       = "${var.name_prefix}-k3s2-server-0"
+  jumpbox_private_ip         = cidrhost(var.management_subnet_cidr, 10)
+  k3s_server_private_ip      = cidrhost(var.cluster_subnet_cidr, 10)
+  cluster2_server_private_ip = cidrhost(var.cluster2_subnet_cidr, 10)
 
   k3s_agent_private_ips = [
     for idx in range(var.k3s_agent_count) : cidrhost(var.cluster_subnet_cidr, 11 + idx)
@@ -20,6 +22,10 @@ locals {
 
   legacy_private_ips = [
     for idx in range(var.legacy_vm_count) : cidrhost(var.legacy_subnet_cidr, 20 + idx)
+  ]
+
+  cluster2_agent_private_ips = [
+    for idx in range(var.cluster2_agent_count) : cidrhost(var.cluster2_subnet_cidr, 11 + idx)
   ]
 
   k3s_agents = {
@@ -31,9 +37,19 @@ locals {
     for idx, ip in local.legacy_private_ips :
     format("%s-legacy-%02d", var.name_prefix, idx + 1) => ip
   }
+
+  cluster2_agents = {
+    for idx, ip in local.cluster2_agent_private_ips :
+    format("%s-k3s2-agent-%02d", var.name_prefix, idx + 1) => ip
+  }
 }
 
 resource "random_password" "k3s_token" {
+  length  = 40
+  special = false
+}
+
+resource "random_password" "cluster2_k3s_token" {
   length  = 40
   special = false
 }
@@ -71,6 +87,13 @@ resource "azurerm_subnet" "legacy" {
   resource_group_name  = azurerm_resource_group.lab.name
   virtual_network_name = azurerm_virtual_network.lab.name
   address_prefixes     = [var.legacy_subnet_cidr]
+}
+
+resource "azurerm_subnet" "cluster2" {
+  name                 = var.cluster2_subnet_name
+  resource_group_name  = azurerm_resource_group.lab.name
+  virtual_network_name = azurerm_virtual_network.lab.name
+  address_prefixes     = [var.cluster2_subnet_cidr]
 }
 
 resource "azurerm_network_security_group" "management" {
@@ -113,6 +136,11 @@ resource "azurerm_subnet_network_security_group_association" "cluster" {
 
 resource "azurerm_subnet_network_security_group_association" "legacy" {
   subnet_id                 = azurerm_subnet.legacy.id
+  network_security_group_id = azurerm_network_security_group.workload.id
+}
+
+resource "azurerm_subnet_network_security_group_association" "cluster2" {
+  subnet_id                 = azurerm_subnet.cluster2.id
   network_security_group_id = azurerm_network_security_group.workload.id
 }
 
@@ -184,6 +212,36 @@ resource "azurerm_network_interface" "legacy" {
   }
 }
 
+resource "azurerm_network_interface" "cluster2_server" {
+  count               = var.cluster2_enabled ? 1 : 0
+  name                = "${local.cluster2_server_name}-nic"
+  location            = azurerm_resource_group.lab.location
+  resource_group_name = azurerm_resource_group.lab.name
+  tags                = merge(local.common_tags, { role = "k3s2-server" })
+
+  ip_configuration {
+    name                          = "primary"
+    subnet_id                     = azurerm_subnet.cluster2.id
+    private_ip_address_allocation = "Static"
+    private_ip_address            = local.cluster2_server_private_ip
+  }
+}
+
+resource "azurerm_network_interface" "cluster2_agents" {
+  for_each            = var.cluster2_enabled ? local.cluster2_agents : {}
+  name                = "${each.key}-nic"
+  location            = azurerm_resource_group.lab.location
+  resource_group_name = azurerm_resource_group.lab.name
+  tags                = merge(local.common_tags, { role = "k3s2-agent" })
+
+  ip_configuration {
+    name                          = "primary"
+    subnet_id                     = azurerm_subnet.cluster2.id
+    private_ip_address_allocation = "Static"
+    private_ip_address            = each.value
+  }
+}
+
 resource "azurerm_linux_virtual_machine" "jumpbox" {
   name                = local.jumpbox_name
   computer_name       = local.jumpbox_name
@@ -213,6 +271,10 @@ resource "azurerm_linux_virtual_machine" "jumpbox" {
     offer     = "0001-com-ubuntu-server-jammy"
     sku       = "22_04-lts-gen2"
     version   = "latest"
+  }
+
+  lifecycle {
+    ignore_changes = [custom_data]
   }
 }
 
@@ -255,6 +317,10 @@ resource "azurerm_linux_virtual_machine" "k3s_server" {
     sku       = "22_04-lts-gen2"
     version   = "latest"
   }
+
+  lifecycle {
+    ignore_changes = [custom_data]
+  }
 }
 
 resource "azurerm_linux_virtual_machine" "k3s_agents" {
@@ -293,6 +359,10 @@ resource "azurerm_linux_virtual_machine" "k3s_agents" {
     sku       = "22_04-lts-gen2"
     version   = "latest"
   }
+
+  lifecycle {
+    ignore_changes = [custom_data]
+  }
 }
 
 resource "azurerm_linux_virtual_machine" "legacy" {
@@ -327,5 +397,97 @@ resource "azurerm_linux_virtual_machine" "legacy" {
     offer     = "0001-com-ubuntu-server-jammy"
     sku       = "22_04-lts-gen2"
     version   = "latest"
+  }
+
+  lifecycle {
+    ignore_changes = [custom_data]
+  }
+}
+
+resource "azurerm_linux_virtual_machine" "cluster2_server" {
+  count               = var.cluster2_enabled ? 1 : 0
+  name                = local.cluster2_server_name
+  computer_name       = local.cluster2_server_name
+  resource_group_name = azurerm_resource_group.lab.name
+  location            = azurerm_resource_group.lab.location
+  size                = var.cluster2_vm_size
+  admin_username      = var.admin_username
+  network_interface_ids = [
+    azurerm_network_interface.cluster2_server[0].id,
+  ]
+  disable_password_authentication = true
+  custom_data = base64encode(templatefile("${path.module}/templates/k3s-server-cloud-init.tftpl", {
+    admin_username      = var.admin_username
+    cilium_version      = var.cilium_version
+    cluster_cidr        = var.cluster2_cluster_cidr
+    expected_node_count = var.cluster2_agent_count + 1
+    k3s_token           = random_password.cluster2_k3s_token.result
+    k3s_version         = var.k3s_version
+    server_private_ip   = local.cluster2_server_private_ip
+    service_cidr        = var.cluster2_service_cidr
+  }))
+  tags = merge(local.common_tags, { role = "k3s2-server" })
+
+  admin_ssh_key {
+    username   = var.admin_username
+    public_key = local.ssh_public_key
+  }
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "StandardSSD_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts-gen2"
+    version   = "latest"
+  }
+
+  lifecycle {
+    ignore_changes = [custom_data]
+  }
+}
+
+resource "azurerm_linux_virtual_machine" "cluster2_agents" {
+  for_each            = var.cluster2_enabled ? local.cluster2_agents : {}
+  name                = each.key
+  computer_name       = each.key
+  resource_group_name = azurerm_resource_group.lab.name
+  location            = azurerm_resource_group.lab.location
+  size                = var.cluster2_vm_size
+  admin_username      = var.admin_username
+  network_interface_ids = [
+    azurerm_network_interface.cluster2_agents[each.key].id,
+  ]
+  disable_password_authentication = true
+  custom_data = base64encode(templatefile("${path.module}/templates/k3s-agent-cloud-init.tftpl", {
+    k3s_token         = random_password.cluster2_k3s_token.result
+    k3s_version       = var.k3s_version
+    node_private_ip   = each.value
+    server_private_ip = local.cluster2_server_private_ip
+  }))
+  tags = merge(local.common_tags, { role = "k3s2-agent" })
+
+  admin_ssh_key {
+    username   = var.admin_username
+    public_key = local.ssh_public_key
+  }
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "StandardSSD_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts-gen2"
+    version   = "latest"
+  }
+
+  lifecycle {
+    ignore_changes = [custom_data]
   }
 }
