@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zone Isolation Experiment | Calico Central Firewall Lab</title>
+  <link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">Calico Central Firewall Lab</div>
+      <nav class="tabs" aria-label="Primary">
+        <a class="tab" href="../index.html">首頁</a>
+        <a class="tab" href="../install.html">安裝指南</a>
+        <a class="tab active" href="../experiments.html">實驗</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <span class="eyebrow">Experiment 01</span>
+      <h1>Zone1 / Zone2 Host Isolation</h1>
+      <p>
+        這個實驗驗證單一 Calico control plane 是否能用 HostEndpoint labels，在兩種不同 estate 上
+        同步下發 zone-based host policy：
+        一邊是 standalone VM，另一邊是「第二個 k3s cluster 的節點，但全部當 external hosts」。
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>實驗目標</h2>
+      <div class="grid three">
+        <article class="card">
+          <span class="status ok">Scope</span>
+          <h3>受管對象</h3>
+          <p><code>legacy-01</code>、<code>legacy-02</code>、以及 cluster-2 三個 nodes。</p>
+        </article>
+        <article class="card">
+          <span class="status ok">Intent</span>
+          <h3>Zone 規則</h3>
+          <p><code>zone1 -> zone1</code> 允許；<code>zone1 <-> zone2</code> 禁止。</p>
+        </article>
+        <article class="card">
+          <span class="status warn">Safety</span>
+          <h3>驗證範圍</h3>
+          <p>先限定在 host test service 的 TCP <code>18080</code>，不碰 k3s/Cilium 管理流量。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Zone 劃分</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Zone</th>
+            <th>成員</th>
+            <th>位址</th>
+            <th>備註</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>zone1</code></td>
+            <td><code>legacy-01</code></td>
+            <td><code>10.70.20.20</code></td>
+            <td>standalone VM，Felix-only external host。</td>
+          </tr>
+          <tr>
+            <td><code>zone1</code></td>
+            <td><code>hep-0605-0534-k3s2-server-0</code></td>
+            <td><code>10.70.30.10</code></td>
+            <td>cluster-2 control-plane node，但在 Calico 眼中是 external host。</td>
+          </tr>
+          <tr>
+            <td><code>zone1</code></td>
+            <td><code>hep-0605-0534-k3s2-agent-01</code> / <code>agent-02</code></td>
+            <td><code>10.70.30.11-12</code></td>
+            <td>cluster-2 worker nodes，同樣走 HostEndpoint 模式。</td>
+          </tr>
+          <tr>
+            <td><code>zone2</code></td>
+            <td><code>legacy-02</code></td>
+            <td><code>10.70.20.21</code></td>
+            <td>standalone VM，保留 restricted profile 並疊加 zone label。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>實驗架構</h2>
+      <div class="diagram">
+        <svg viewBox="0 0 1100 460" role="img" aria-label="Zone isolation experiment architecture">
+          <defs>
+            <marker id="zone-exp-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#0f766e"></path>
+            </marker>
+          </defs>
+
+          <rect x="34" y="38" width="300" height="312" rx="26" fill="#f7efe2" stroke="#d7cab7"></rect>
+          <text x="60" y="76" fill="#1d2b2e" font-size="25" font-family="Noto Serif TC, PMingLiU, Georgia, serif">Cluster-1 Control Plane</text>
+          <text x="60" y="106" fill="#5f696d" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">Calico policy-only on top of k3s + Cilium</text>
+
+          <rect x="60" y="132" width="248" height="78" rx="18" fill="#fffaf3" stroke="#d7cab7"></rect>
+          <text x="82" y="162" fill="#1d2b2e" font-size="18" font-family="Noto Serif TC, PMingLiU, Georgia, serif">HostEndpoint labels</text>
+          <text x="82" y="188" fill="#5f696d" font-size="14" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">zone=zone1 / zone2</text>
+
+          <rect x="60" y="228" width="248" height="96" rx="18" fill="#fffaf3" stroke="#d7cab7"></rect>
+          <text x="82" y="258" fill="#1d2b2e" font-size="18" font-family="Noto Serif TC, PMingLiU, Georgia, serif">Experiment policies</text>
+          <text x="82" y="284" fill="#5f696d" font-size="14" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">allow zone1 -> zone1 on TCP 18080</text>
+          <text x="82" y="306" fill="#5f696d" font-size="14" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">deny zone2 -> zone1 on TCP 18080</text>
+          <text x="82" y="328" fill="#5f696d" font-size="14" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">deny zone1 -> zone2 on TCP 18080</text>
+
+          <rect x="406" y="38" width="660" height="150" rx="26" fill="#eff5ea" stroke="#c9dac2"></rect>
+          <text x="434" y="76" fill="#1d2b2e" font-size="24" font-family="Noto Serif TC, PMingLiU, Georgia, serif">Zone1 Estate</text>
+          <text x="434" y="104" fill="#5f696d" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">legacy-01 + cluster-2 nodes</text>
+
+          <rect x="434" y="122" width="180" height="44" rx="14" fill="#fffaf3" stroke="#c9dac2"></rect>
+          <text x="456" y="150" fill="#1d2b2e" font-size="16" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">legacy-01 / 10.70.20.20</text>
+
+          <rect x="636" y="122" width="194" height="44" rx="14" fill="#fffaf3" stroke="#c9dac2"></rect>
+          <text x="656" y="150" fill="#1d2b2e" font-size="16" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">k3s2-server-0 / 10.70.30.10</text>
+
+          <rect x="852" y="122" width="188" height="44" rx="14" fill="#fffaf3" stroke="#c9dac2"></rect>
+          <text x="872" y="150" fill="#1d2b2e" font-size="16" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">k3s2-agent-01/02</text>
+
+          <rect x="406" y="236" width="660" height="114" rx="26" fill="#f8ece8" stroke="#d7cab7"></rect>
+          <text x="434" y="274" fill="#1d2b2e" font-size="24" font-family="Noto Serif TC, PMingLiU, Georgia, serif">Zone2 Estate</text>
+          <text x="434" y="302" fill="#5f696d" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">legacy-02 only</text>
+
+          <rect x="434" y="314" width="220" height="44" rx="14" fill="#fffaf3" stroke="#d7cab7"></rect>
+          <text x="456" y="342" fill="#1d2b2e" font-size="16" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">legacy-02 / 10.70.20.21</text>
+
+          <line x1="334" y1="170" x2="406" y2="170" stroke="#0f766e" stroke-width="4" marker-end="url(#zone-exp-arrow)"></line>
+          <text x="344" y="156" fill="#0f766e" font-size="13" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">selector-driven policy</text>
+
+          <line x1="334" y1="284" x2="406" y2="284" stroke="#0f766e" stroke-width="4" marker-end="url(#zone-exp-arrow)"></line>
+          <text x="344" y="270" fill="#0f766e" font-size="13" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">same datastore</text>
+
+          <rect x="34" y="378" width="1032" height="46" rx="14" fill="#fffaf3" stroke="#d7cab7"></rect>
+          <text x="56" y="406" fill="#1d2b2e" font-size="15" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif">
+            實驗只驗證 host service TCP 18080，不直接套用全埠 zoning，避免影響 jumpbox SSH、k3s control plane 與 Cilium datapath。
+          </text>
+        </svg>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>套用設定</h2>
+      <div class="grid two">
+        <article class="card">
+          <h3>Calico manifests</h3>
+          <ul>
+            <li><code>manifests/calico/zone-experiment/00-zone-hostendpoints.yaml</code></li>
+            <li><code>manifests/calico/zone-experiment/10-allow-zone1-to-zone1-http.yaml</code></li>
+            <li><code>manifests/calico/zone-experiment/20-deny-zone1-to-zone2-http.yaml</code></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>實驗腳本</h3>
+          <ul>
+            <li><code>scripts/run-zone-isolation-experiment.sh</code></li>
+            <li>在五台 external hosts 上建立 <code>lab-zone-http.service</code></li>
+            <li>HTTP 測試埠：<code>18080</code></li>
+          </ul>
+        </article>
+      </div>
+      <div class="code" style="margin-top: 1rem;"><pre>./scripts/run-zone-isolation-experiment.sh \
+  --cluster1-kubeconfig /home/ubuntu/.kube/hep-0605-0534-k3s.yaml \
+  --jumpbox azureuser@20.110.199.106
+
+核心 policy:
+- selector: experiment == "zone-isolation" && zone == "zone1"
+- selector: experiment == "zone-isolation" && zone == "zone2"
+- test port: TCP 18080
+</pre></div>
+    </section>
+
+    <section class="section">
+      <h2>實測結果</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>來源</th>
+            <th>目的地</th>
+            <th>期望</th>
+            <th>結果</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>legacy-01</code></td>
+            <td><code>k3s2-server-0:18080</code></td>
+            <td>Allow</td>
+            <td>Pass</td>
+          </tr>
+          <tr>
+            <td><code>k3s2-server-0</code></td>
+            <td><code>legacy-01:18080</code></td>
+            <td>Allow</td>
+            <td>Pass</td>
+          </tr>
+          <tr>
+            <td><code>k3s2-agent-01</code></td>
+            <td><code>k3s2-agent-02:18080</code></td>
+            <td>Allow</td>
+            <td>Pass</td>
+          </tr>
+          <tr>
+            <td><code>legacy-01</code></td>
+            <td><code>legacy-02:18080</code></td>
+            <td>Deny</td>
+            <td>Pass</td>
+          </tr>
+          <tr>
+            <td><code>k3s2-server-0</code></td>
+            <td><code>legacy-02:18080</code></td>
+            <td>Deny</td>
+            <td>Pass</td>
+          </tr>
+          <tr>
+            <td><code>legacy-02</code></td>
+            <td><code>legacy-01:18080</code></td>
+            <td>Deny</td>
+            <td>Pass</td>
+          </tr>
+          <tr>
+            <td><code>legacy-02</code></td>
+            <td><code>k3s2-server-0:18080</code></td>
+            <td>Deny</td>
+            <td>Pass</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="grid three" style="margin-top: 1rem;">
+        <article class="card">
+          <span class="status ok">Pass</span>
+          <h3>Policy behavior</h3>
+          <p><code>zone1 -> zone1</code> 全數允許，<code>zone1 <-> zone2</code> 全數阻擋。</p>
+        </article>
+        <article class="card">
+          <span class="status ok">Pass</span>
+          <h3>Host services</h3>
+          <p>五台 external hosts 上的 <code>lab-zone-http.service</code> 皆為 <code>active</code>。</p>
+        </article>
+        <article class="card">
+          <span class="status ok">Pass</span>
+          <h3>Cluster health</h3>
+          <p>cluster-1 與 cluster-2 的 <code>cilium status --wait</code> 皆維持 <code>OK</code>。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>觀察</h2>
+      <div class="note">
+        <p>
+          這一輪實驗已經證明：在目前的 lab 拓樸下，Calico 不需要接管第二個叢集的 CNI，
+          只要把 cluster-2 nodes 視為 external hosts，就能和 standalone VMs 一起被單一 control plane
+          用 label selector 做同一套 host-level zoning。
+        </p>
+        <p>
+          同時，這仍然只是第一輪驗證。它目前只覆蓋專用測試埠 TCP <code>18080</code>，還沒有擴大到多埠、
+          多 profile、或真正的 identity-based firewall 規則。
+        </p>
+      </div>
+    </section>
+
+    <section class="footer">
+      <h2>相關頁面</h2>
+      <p>
+        回到 <a href="../experiments.html">實驗首頁</a> 查看其他實驗項目，
+        或回到 <a href="../install.html">安裝指南</a> 查看 cluster-2 external-host onboarding 流程。
+      </p>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,90 @@
+apiVersion: projectcalico.org/v3
+kind: HostEndpoint
+metadata:
+  name: hep-0605-0534-k3s2-server-0-eth0
+  labels:
+    cluster_id: hep-0605-0534-k3s2
+    cluster_kind: kubernetes
+    endpoint_role: k8s-node
+    experiment: zone-isolation
+    host_name: hep-0605-0534-k3s2-server-0
+    managed_as: external-host
+    policy_profile: baseline
+    zone: zone1
+spec:
+  node: hep-0605-0534-k3s2-server-0
+  interfaceName: eth0
+  expectedIPs:
+    - 10.70.30.10
+---
+apiVersion: projectcalico.org/v3
+kind: HostEndpoint
+metadata:
+  name: hep-0605-0534-k3s2-agent-01-eth0
+  labels:
+    cluster_id: hep-0605-0534-k3s2
+    cluster_kind: kubernetes
+    endpoint_role: k8s-node
+    experiment: zone-isolation
+    host_name: hep-0605-0534-k3s2-agent-01
+    managed_as: external-host
+    policy_profile: baseline
+    zone: zone1
+spec:
+  node: hep-0605-0534-k3s2-agent-01
+  interfaceName: eth0
+  expectedIPs:
+    - 10.70.30.11
+---
+apiVersion: projectcalico.org/v3
+kind: HostEndpoint
+metadata:
+  name: hep-0605-0534-k3s2-agent-02-eth0
+  labels:
+    cluster_id: hep-0605-0534-k3s2
+    cluster_kind: kubernetes
+    endpoint_role: k8s-node
+    experiment: zone-isolation
+    host_name: hep-0605-0534-k3s2-agent-02
+    managed_as: external-host
+    policy_profile: baseline
+    zone: zone1
+spec:
+  node: hep-0605-0534-k3s2-agent-02
+  interfaceName: eth0
+  expectedIPs:
+    - 10.70.30.12
+---
+apiVersion: projectcalico.org/v3
+kind: HostEndpoint
+metadata:
+  name: hep-0605-0534-legacy-01-eth0
+  labels:
+    endpoint_role: legacy-web
+    experiment: zone-isolation
+    host_name: hep-0605-0534-legacy-01
+    platform: vm
+    policy_profile: baseline
+    zone: zone1
+spec:
+  node: hep-0605-0534-legacy-01
+  interfaceName: eth0
+  expectedIPs:
+    - 10.70.20.20
+---
+apiVersion: projectcalico.org/v3
+kind: HostEndpoint
+metadata:
+  name: hep-0605-0534-legacy-02-eth0
+  labels:
+    endpoint_role: legacy-api
+    experiment: zone-isolation
+    host_name: hep-0605-0534-legacy-02
+    platform: vm
+    policy_profile: restricted
+    zone: zone2
+spec:
+  node: hep-0605-0534-legacy-02
+  interfaceName: eth0
+  expectedIPs:
+    - 10.70.20.21

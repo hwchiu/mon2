@@ -6,6 +6,8 @@ available through `kubectl` on the current k3s plus Cilium lab cluster.
 
 For the new multi-cluster host-only direction, see
 [manifests/calico/external-k8s-hosts/README.md](/home/ubuntu/calico/manifests/calico/external-k8s-hosts/README.md).
+For the first centralized zoning validation, see
+[manifests/calico/zone-experiment/README.md](/home/ubuntu/calico/manifests/calico/zone-experiment/README.md).
 
 ## Apply order
 

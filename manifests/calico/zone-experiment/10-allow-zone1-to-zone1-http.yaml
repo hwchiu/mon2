@@ -1,0 +1,35 @@
+apiVersion: projectcalico.org/v3
+kind: GlobalNetworkPolicy
+metadata:
+  name: zone-experiment-allow-zone1-to-zone1-http
+spec:
+  order: 5
+  selector: experiment == "zone-isolation" && zone == "zone1"
+  types:
+    - Ingress
+  ingress:
+    - action: Allow
+      protocol: TCP
+      source:
+        selector: experiment == "zone-isolation" && zone == "zone1"
+      destination:
+        ports:
+          - 18080
+---
+apiVersion: projectcalico.org/v3
+kind: GlobalNetworkPolicy
+metadata:
+  name: zone-experiment-deny-zone2-to-zone1-http
+spec:
+  order: 6
+  selector: experiment == "zone-isolation" && zone == "zone1"
+  types:
+    - Ingress
+  ingress:
+    - action: Deny
+      protocol: TCP
+      source:
+        selector: experiment == "zone-isolation" && zone == "zone2"
+      destination:
+        ports:
+          - 18080

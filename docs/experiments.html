@@ -19,10 +19,11 @@
 
     <section class="hero">
       <span class="eyebrow">Experiment Board</span>
-      <h1>目前沒有 identity-based firewall 實驗結果</h1>
+      <h1>實驗已開始，但仍聚焦在 host identity</h1>
       <p>
-        setup 已經完成，但真正的 centralized identity-based firewall 驗證還沒開始。
-        這一頁先保留成空白看板，只記錄環境 readiness，不把 setup 成果誤寫成實驗結果。
+        setup 已經完成，第一個正式實驗也已經落地：用 zone labels 驗證單一 Calico control plane
+        是否能同時管理 standalone VM 與 cluster-2 nodes as external hosts。更進一步的
+        identity-based firewall 仍未開始，因此這一頁只展示目前已完成的 host-level 實驗。
       </p>
     </section>
 
@@ -41,21 +42,33 @@
         </article>
         <article class="card">
           <span class="status warn">Pending</span>
-          <h3>Identity firewall</h3>
-          <p>尚未開始下任何以 identity 為核心的跨 estate 防火牆規則與驗證。</p>
+          <h3>Workload identity</h3>
+          <p>目前仍只做到 host identity / HostEndpoint；跨 cluster workload identity 尚未開始。</p>
         </article>
       </div>
     </section>
 
     <section class="section">
       <h2>實驗結果</h2>
-      <div class="card">
-        <span class="status warn">Empty</span>
-        <h3>尚無結果</h3>
-        <p>
-          目前沒有可展示的 identity-based firewall 結果。下一步會從 host identity 與 centralized host policy rollout 開始，
-          等第一批規則真的下發並完成驗證後，再把結果放回這一頁。
-        </p>
+      <div class="grid two">
+        <article class="card links">
+          <span class="status ok">Completed</span>
+          <h3>Zone1 / Zone2 Host Isolation</h3>
+          <p>
+            把 <code>legacy-01</code> 與 cluster-2 nodes 視為 <code>zone1</code>，
+            <code>legacy-02</code> 視為 <code>zone2</code>，並在 TCP <code>18080</code> 上驗證
+            <code>zone1 -> zone1</code> allow、<code>zone1 <-> zone2</code> deny。
+          </p>
+          <a href="./experiments/zone-isolation.html">開啟實驗結果頁</a>
+        </article>
+        <article class="card">
+          <span class="status warn">Pending</span>
+          <h3>Identity-Based Firewall</h3>
+          <p>
+            下一步才會開始把 host-level zoning 往更高階的 identity-based firewall 推進，
+            例如更多 selector 維度、多個 profile、或不同業務域之間的策略。
+          </p>
+        </article>
       </div>
     </section>
 
@@ -72,13 +85,13 @@
         <tbody>
           <tr>
             <td>Centralized host policy rollout</td>
-            <td>未開始</td>
-            <td>同一份 GlobalNetworkPolicy 下發到 cluster-2 nodes 與 standalone VMs。</td>
+            <td>已完成第一輪</td>
+            <td>zone-based host policy 已驗證可同時下發到 cluster-2 nodes 與 standalone VMs。</td>
           </tr>
           <tr>
             <td>Host identity segmentation</td>
-            <td>未開始</td>
-            <td>依 <code>cluster_id</code>、<code>endpoint_role</code>、<code>managed_as</code> 標籤切分政策。</td>
+            <td>已完成第一輪</td>
+            <td>已使用 <code>zone</code> 與 <code>experiment</code> labels 做第一個 host identity 分群。</td>
           </tr>
           <tr>
             <td>Workload identity</td>
