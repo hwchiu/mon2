@@ -72,85 +72,85 @@
           <svg viewBox="0 0 1120 620" role="img" aria-label="Zone isolation topology">
             <defs>
               <marker id="zone-arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto-start-reverse">
-                <path d="M 0 0 L 12 6 L 0 12 z" fill="#0f766e"></path>
+                <path d="M 0 0 L 12 6 L 0 12 z" fill="#22d3ee"></path>
               </marker>
             </defs>
 
             <!-- Cluster-1 -->
-            <rect x="36" y="44" width="280" height="468" rx="12" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"></rect>
-            <text x="56" y="78" fill="#0f172a" font-size="20" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Cluster-1</text>
-            <text x="56" y="100" fill="#475569" font-size="12" font-family="ui-sans-serif, system-ui, sans-serif">唯一 Calico control plane</text>
+            <rect x="36" y="44" width="280" height="468" rx="8" fill="#1a2330" stroke="#334155" stroke-width="1.5"></rect>
+            <text x="56" y="76" fill="#e2e8f0" font-size="18" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Cluster-1</text>
+            <text x="56" y="96" fill="#94a3b8" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">唯一 Calico control plane</text>
 
-            <rect x="56" y="122" width="240" height="80" rx="8" fill="#ffffff" stroke="#e2e8f0"></rect>
-            <text x="72" y="146" fill="#0f172a" font-size="14" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Datastore</text>
-            <text x="72" y="166" fill="#475569" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">k3s API on 10.70.10.10</text>
-            <text x="72" y="182" fill="#64748b" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">all HostEndpoint metadata lives here</text>
+            <rect x="56" y="116" width="240" height="76" rx="6" fill="#121821" stroke="#1f2a3a"></rect>
+            <text x="70" y="138" fill="#e2e8f0" font-size="13" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Datastore</text>
+            <text x="70" y="156" fill="#94a3b8" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">k3s API on 10.70.10.10</text>
+            <text x="70" y="172" fill="#64748b" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">all HostEndpoint metadata lives here</text>
 
-            <rect x="56" y="214" width="240" height="84" rx="8" fill="#ffffff" stroke="#e2e8f0"></rect>
-            <text x="72" y="238" fill="#0f172a" font-size="14" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Selector Set</text>
-            <text x="72" y="258" fill="#475569" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">experiment = zone-isolation</text>
-            <text x="72" y="274" fill="#64748b" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">zone = zone1 / zone2</text>
+            <rect x="56" y="204" width="240" height="80" rx="6" fill="#121821" stroke="#1f2a3a"></rect>
+            <text x="70" y="226" fill="#e2e8f0" font-size="13" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Selector Set</text>
+            <text x="70" y="244" fill="#94a3b8" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">experiment = zone-isolation</text>
+            <text x="70" y="260" fill="#64748b" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">zone = zone1 / zone2</text>
 
-            <rect x="56" y="310" width="240" height="92" rx="8" fill="#ffffff" stroke="#e2e8f0"></rect>
-            <text x="72" y="334" fill="#0f172a" font-size="14" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Policy Set</text>
-            <text x="72" y="354" fill="#475569" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">allow zone1 → zone1</text>
-            <text x="72" y="370" fill="#475569" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">deny zone2 → zone1</text>
-            <text x="72" y="386" fill="#475569" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">deny zone1 → zone2</text>
+            <rect x="56" y="296" width="240" height="88" rx="6" fill="#121821" stroke="#1f2a3a"></rect>
+            <text x="70" y="318" fill="#e2e8f0" font-size="13" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Policy Set</text>
+            <text x="70" y="336" fill="#94a3b8" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">allow zone1 → zone1</text>
+            <text x="70" y="352" fill="#94a3b8" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">deny zone2 → zone1</text>
+            <text x="70" y="368" fill="#94a3b8" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">deny zone1 → zone2</text>
 
             <!-- Host Firewall box -->
-            <rect x="348" y="132" width="240" height="232" rx="10" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"></rect>
-            <text x="368" y="162" fill="#0f172a" font-size="17" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Host Firewall</text>
-            <text x="368" y="184" fill="#475569" font-size="12" font-family="ui-sans-serif, system-ui, sans-serif">Calico selector-based policy</text>
+            <rect x="348" y="132" width="240" height="224" rx="8" fill="#121821" stroke="#334155" stroke-width="1.5"></rect>
+            <text x="366" y="160" fill="#e2e8f0" font-size="15" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Host Firewall</text>
+            <text x="366" y="180" fill="#94a3b8" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">Calico selector-based policy</text>
 
-            <rect x="368" y="204" width="200" height="38" rx="6" fill="#ffffff" stroke="#e2e8f0"></rect>
-            <text x="382" y="228" fill="#334155" font-size="12" font-family="ui-sans-serif, system-ui, sans-serif">scope: TCP 18080 only</text>
+            <rect x="366" y="200" width="200" height="36" rx="5" fill="#1a2330" stroke="#1f2a3a"></rect>
+            <text x="378" y="222" fill="#cbd5e1" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">scope: TCP 18080 only</text>
 
-            <rect x="368" y="250" width="200" height="38" rx="6" fill="#f0fdf4" stroke="#86efac"></rect>
-            <text x="382" y="274" fill="#166534" font-size="12" font-family="ui-sans-serif, system-ui, sans-serif">zone1 ↔ zone1 allow</text>
+            <rect x="366" y="244" width="200" height="36" rx="5" fill="#0f2a1f" stroke="#4ade80"></rect>
+            <text x="378" y="266" fill="#4ade80" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">zone1 ↔ zone1 allow</text>
 
-            <rect x="368" y="296" width="200" height="38" rx="6" fill="#fff7ed" stroke="#fdba74"></rect>
-            <text x="382" y="320" fill="#9a3412" font-size="12" font-family="ui-sans-serif, system-ui, sans-serif">zone1 ↔ zone2 deny</text>
+            <rect x="366" y="288" width="200" height="36" rx="5" fill="#2a2110" stroke="#fbbf24"></rect>
+            <text x="378" y="310" fill="#fbbf24" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">zone1 ↔ zone2 deny</text>
 
             <!-- Zone 1 -->
-            <rect x="628" y="42" width="440" height="270" rx="12" fill="#f8fafc" stroke="#86efac" stroke-width="1.5"></rect>
-            <text x="650" y="74" fill="#0f172a" font-size="19" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Zone 1 — allow domain</text>
+            <rect x="628" y="42" width="440" height="260" rx="8" fill="#121821" stroke="#4ade80" stroke-width="1.5"></rect>
+            <text x="648" y="72" fill="#e2e8f0" font-size="17" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Zone 1 — allow domain</text>
 
-            <rect x="650" y="94" width="180" height="68" rx="8" fill="#ffffff" stroke="#e2e8f0"></rect>
-            <text x="664" y="116" fill="#0f172a" font-size="13" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">legacy-01</text>
-            <text x="664" y="134" fill="#475569" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">10.70.20.20</text>
+            <rect x="648" y="90" width="180" height="64" rx="6" fill="#1a2330" stroke="#1f2a3a"></rect>
+            <text x="660" y="110" fill="#e2e8f0" font-size="12" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">legacy-01</text>
+            <text x="660" y="126" fill="#94a3b8" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">10.70.20.20</text>
 
-            <rect x="846" y="94" width="190" height="68" rx="8" fill="#ffffff" stroke="#e2e8f0"></rect>
-            <text x="860" y="116" fill="#0f172a" font-size="13" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">k3s2-server-0</text>
-            <text x="860" y="134" fill="#475569" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">10.70.30.10</text>
+            <rect x="842" y="90" width="190" height="64" rx="6" fill="#1a2330" stroke="#1f2a3a"></rect>
+            <text x="854" y="110" fill="#e2e8f0" font-size="12" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">k3s2-server-0</text>
+            <text x="854" y="126" fill="#94a3b8" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">10.70.30.10</text>
 
-            <rect x="650" y="174" width="180" height="68" rx="8" fill="#ffffff" stroke="#e2e8f0"></rect>
-            <text x="664" y="196" fill="#0f172a" font-size="13" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">k3s2-agent-01</text>
-            <text x="664" y="214" fill="#475569" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">10.70.30.11</text>
+            <rect x="648" y="164" width="180" height="64" rx="6" fill="#1a2330" stroke="#1f2a3a"></rect>
+            <text x="660" y="184" fill="#e2e8f0" font-size="12" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">k3s2-agent-01</text>
+            <text x="660" y="200" fill="#94a3b8" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">10.70.30.11</text>
 
-            <rect x="846" y="174" width="190" height="68" rx="8" fill="#ffffff" stroke="#e2e8f0"></rect>
-            <text x="860" y="196" fill="#0f172a" font-size="13" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">k3s2-agent-02</text>
-            <text x="860" y="214" fill="#475569" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">10.70.30.12</text>
+            <rect x="842" y="164" width="190" height="64" rx="6" fill="#1a2330" stroke="#1f2a3a"></rect>
+            <text x="854" y="184" fill="#e2e8f0" font-size="12" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">k3s2-agent-02</text>
+            <text x="854" y="200" fill="#94a3b8" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">10.70.30.12</text>
 
             <!-- Zone 2 -->
-            <rect x="628" y="338" width="440" height="138" rx="12" fill="#fffaf5" stroke="#fdba74" stroke-width="1.5"></rect>
-            <text x="650" y="370" fill="#0f172a" font-size="19" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Zone 2 — isolated target</text>
+            <rect x="628" y="326" width="440" height="134" rx="8" fill="#121821" stroke="#fbbf24" stroke-width="1.5"></rect>
+            <text x="648" y="356" fill="#e2e8f0" font-size="17" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Zone 2 — isolated target</text>
 
-            <rect x="650" y="394" width="210" height="48" rx="8" fill="#ffffff" stroke="#e2e8f0"></rect>
-            <text x="664" y="418" fill="#0f172a" font-size="13" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">legacy-02 / 10.70.20.21</text>
+            <rect x="648" y="378" width="210" height="46" rx="6" fill="#1a2330" stroke="#1f2a3a"></rect>
+            <text x="660" y="402" fill="#e2e8f0" font-size="12" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">legacy-02 / 10.70.20.21</text>
 
             <!-- Arrows -->
-            <line x1="316" y1="240" x2="348" y2="240" stroke="#0f766e" stroke-width="3.5" marker-end="url(#zone-arrow)"></line>
-            <path d="M 588 204 H 610 V 162 H 628" fill="none" stroke="#0f766e" stroke-width="3.5" marker-end="url(#zone-arrow)"></path>
-            <path d="M 588 300 H 610 V 380 H 628" fill="none" stroke="#0f766e" stroke-width="3.5" marker-end="url(#zone-arrow)"></path>
+            <line x1="316" y1="228" x2="348" y2="228" stroke="#22d3ee" stroke-width="3" marker-end="url(#zone-arrow)"></line>
+            <path d="M 588 196 H 610 V 156 H 628" fill="none" stroke="#22d3ee" stroke-width="3" marker-end="url(#zone-arrow)"></path>
+            <path d="M 588 280 H 610 V 360 H 628" fill="none" stroke="#22d3ee" stroke-width="3" marker-end="url(#zone-arrow)"></path>
 
-            <rect x="308" y="200" width="96" height="26" rx="6" fill="#f1f5f9" stroke="#e2e8f0"></rect>
-            <text x="320" y="218" fill="#0f766e" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">metadata sync</text>
+            <rect x="308" y="190" width="96" height="24" rx="4" fill="#1a2330" stroke="#1f2a3a"></rect>
+            <text x="318" y="206" fill="#22d3ee" font-size="9" font-family="ui-sans-serif, system-ui, sans-serif">metadata sync</text>
 
-            <rect x="578" y="132" width="92" height="26" rx="6" fill="#f1f5f9" stroke="#e2e8f0"></rect>
-            <text x="590" y="150" fill="#0f766e" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">zone1 rules</text>
+            <rect x="578" y="128" width="92" height="24" rx="4" fill="#1a2330" stroke="#1f2a3a"></rect>
+            <text x="588" y="144" fill="#22d3ee" font-size="9" font-family="ui-sans-serif, system-ui, sans-serif">zone1 rules</text>
 
-            <rect x="578" y="410" width="92" height="26" rx="6" fill="#f1f5f9" stroke="#e2e8f0"></rect>
-            <text x="590" y="428" fill="#0f766e" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">zone2 rules</text>
+            <rect x="578" y="392" width="92" height="24" rx="4" fill="#1a2330" stroke="#1f2a3a"></rect>
+            <text x="588" y="408" fill="#22d3ee" font-size="9" font-family="ui-sans-serif, system-ui, sans-serif">zone2 rules</text>
           </svg>
           <div class="figure-caption">
             Three layers only: control plane, policy engine, managed estates. Jumpbox, placeholder nodes and raw YAML are omitted so the only thing you see is how policy flows from cluster-1 into zone1 and zone2.
