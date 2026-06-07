@@ -64,7 +64,7 @@ a:hover {
   backdrop-filter: blur(8px);
 }
 .topnav-inner {
-  max-width: 960px;
+  max-width: 920px;
   margin: 0 auto;
   padding: 0 1.5rem;
   height: 52px;
