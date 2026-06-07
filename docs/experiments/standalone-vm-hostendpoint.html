@@ -3,72 +3,41 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>實驗 B: Standalone VM + Calico Felix</title>
-  <style>
-    :root {
-      --bg: #f5efe6;
-      --panel: #fff9f1;
-      --ink: #202a2d;
-      --muted: #606a6e;
-      --line: #d8cab8;
-      --accent: #0f766e;
-      --ok: #166534;
-      --warn: #92400e;
-      --shadow: 0 18px 44px rgba(32, 42, 45, 0.08);
-      --radius: 22px;
-      --serif: "Noto Serif TC", "PMingLiU", Georgia, serif;
-      --sans: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
-      --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      color: var(--ink);
-      background:
-        radial-gradient(circle at top right, rgba(180,83,9,.12), transparent 24rem),
-        linear-gradient(180deg, #fbf6ee 0%, var(--bg) 100%);
-      font: 16px/1.7 var(--sans);
-    }
-    a { color: var(--accent); }
-    .shell { width: min(1100px, calc(100vw - 2rem)); margin: 0 auto; padding: 2rem 0 4rem; }
-    .hero, .section { background: var(--panel); border: 1px solid rgba(216,202,184,.95); border-radius: var(--radius); box-shadow: var(--shadow); }
-    .hero { padding: 2.2rem; }
-    .section { margin-top: 1.2rem; padding: 1.5rem; }
-    h1, h2, h3 { margin: 0 0 .8rem; line-height: 1.15; font-family: var(--serif); }
-    h1 { font-size: clamp(2.2rem, 4.6vw, 3.8rem); }
-    h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); }
-    h3 { font-size: 1.15rem; }
-    p { margin: 0 0 1rem; color: var(--muted); }
-    .grid { display: grid; gap: 1rem; }
-    .grid.two { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-    .grid.three { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-    .card { border: 1px solid rgba(216,202,184,.9); border-radius: 18px; background: linear-gradient(180deg, #fff9f1 0%, #f8f0e4 100%); padding: 1.1rem; }
-    .status { display: inline-block; padding: .2rem .55rem; border-radius: 999px; font-size: .76rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; margin-bottom: .75rem; }
-    .status.ok { color: var(--ok); background: rgba(22,101,52,.1); }
-    .status.warn { color: var(--warn); background: rgba(146,64,14,.12); }
-    code { font-family: var(--mono); background: rgba(15,118,110,.08); border-radius: 6px; padding: .12rem .35rem; color: var(--ink); }
-    pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-family: var(--mono); line-height: 1.55; }
-    .code { padding: 1rem; border-radius: 18px; border: 1px solid var(--line); background: #f7f0e5; overflow-x: auto; }
-    .diagram-frame { margin-top: 1rem; border: 1px solid rgba(216,202,184,.95); border-radius: 18px; background: linear-gradient(180deg, #fff9f1 0%, #f6efe3 100%); overflow: hidden; }
-    .diagram-frame svg { display: block; width: 100%; height: auto; }
-    table { width: 100%; border-collapse: collapse; margin-top: .75rem; }
-    th, td { text-align: left; vertical-align: top; padding: .8rem .7rem; border-bottom: 1px solid rgba(216,202,184,.85); }
-    th { text-transform: uppercase; letter-spacing: .05em; font-size: .82rem; }
-    ul { margin: .4rem 0 0; padding-left: 1.1rem; color: var(--muted); }
-    li + li { margin-top: .35rem; }
-  </style>
+  <title>Archive: Standalone VM + Calico Felix</title>
+  <link rel="stylesheet" href="../assets/site.css">
 </head>
 <body>
-  <main class="shell">
-    <section class="hero">
-      <p><a href="../index.html">返回首頁</a></p>
-      <h1>實驗 B: Standalone VM + Calico Felix</h1>
-      <p>
-        這一頁同樣保留為 setup validation archive，不是正式的 identity-based firewall 實驗頁。
-        它記錄的是非 Kubernetes 節點的 Azure VM 接入流程。這一輪已把兩台獨立 VM 都納入同一套
-        Calico HostEndpoint / GlobalNetworkPolicy 模型，同時保持它們不是 k3s node、也不把它們變成 Kubernetes worker。
-      </p>
-    </section>
+  <header class="topnav">
+    <div class="topnav-inner">
+      <a class="brand" href="../index.html">Calico Central Firewall Lab</a>
+      <nav class="topnav-links">
+        <a href="../index.html">Overview</a>
+        <a href="../install.html">Install Guide</a>
+        <a href="../experiments.html">Experiments</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="page">
+    <aside class="sidebar">
+      <div class="sidebar-title">Archives</div>
+      <nav>
+        <a href="../experiments.html">← Back to Experiments</a>
+        <a href="k3s-cilium-hostendpoint.html">k3s + Cilium + Calico</a>
+        <a href="standalone-vm-hostendpoint.html" class="active">Standalone VM + Felix</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="hero">
+        <span class="eyebrow">Archive • Setup Validation</span>
+        <h1>Experiment B: Standalone VM + Calico Felix</h1>
+        <p>
+          This page is also a setup validation archive. It records how two non-Kubernetes Azure VMs were brought
+          into the same Calico HostEndpoint / GlobalNetworkPolicy model while remaining outside any k3s cluster
+          and without becoming Kubernetes workers.
+        </p>
+      </div>
 
     <section class="section">
       <h2>目標 VM</h2>
@@ -349,6 +318,30 @@ manifests/calico/vm-experiment/40-legacy-01-deny-http.yaml
         </article>
       </div>
     </section>
-  </main>
+
+      <section class="footer">
+        <p><a href="../experiments.html">← Back to Experiments</a></p>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    (function() {
+      document.querySelectorAll('pre').forEach(function(pre) {
+        var btn = document.createElement('button');
+        btn.className = 'copy-btn';
+        btn.textContent = 'copy';
+        btn.addEventListener('click', function() {
+          var text = pre.innerText || pre.textContent;
+          navigator.clipboard.writeText(text.trim()).then(function() {
+            var orig = btn.textContent;
+            btn.textContent = 'copied';
+            setTimeout(function(){ btn.textContent = orig; }, 1400);
+          });
+        });
+        pre.appendChild(btn);
+      });
+    })();
+  </script>
 </body>
 </html>
