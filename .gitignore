@@ -7,3 +7,4 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 infra/azure/terraform/terraform.tfvars
+.worktrees/
