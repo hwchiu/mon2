@@ -3,17 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Zone Isolation · Experiments · Calico Central Firewall Lab</title>
+  <title>Zone1 / Zone2 主機隔離 · Calico 軌道 · Host Firewall Validation Lab</title>
   <link rel="stylesheet" href="../assets/site.css">
 </head>
 <body>
   <header class="topnav">
     <div class="topnav-inner">
-      <a class="brand" href="../index.html">Calico Central Firewall Lab</a>
+      <a class="brand" href="../index.html">Host Firewall Validation Lab</a>
       <nav class="topnav-links" aria-label="Primary">
-        <a href="../index.html">Overview</a>
-        <a href="../install.html">Install Guide</a>
-        <a href="../experiments.html">Experiments</a>
+        <a href="../index.html">總覽</a>
+        <a href="../experiments.html" class="active">驗證看板</a>
+        <a href="../install.html">安裝與支援</a>
       </nav>
       <div class="topnav-actions">
         <!-- GitHub link can be added here when the repo is public -->
@@ -23,34 +23,33 @@
 
   <main class="shell">
       <div class="hero">
-        <span class="eyebrow">Experiment 01</span>
-        <h1>Zone1 / Zone2 Host Isolation</h1>
+        <span class="eyebrow">Calico 軌道 · 實驗 01</span>
+        <h1>Zone1 / Zone2 主機隔離</h1>
         <p>
-          This page does two things: make the topology obvious, then make the results obvious.
-          The goal is simple — instantly see who is in <code>zone1</code> vs <code>zone2</code> and why we ended up with
-          <code>zone1 → zone1</code> allow and cross-zone deny on TCP 18080.
+          這是 Calico 軌道目前最完整的一頁結果。它先把拓樸講清楚，再把矩陣與結論講清楚，
+          讓讀者快速看見為什麼最後得到 <code>zone1 → zone1</code> 允許，以及 TCP 18080 上的跨區拒絕。
         </p>
 
         <div class="grid two" style="margin-top:1rem;gap:1rem;align-items:start">
           <div>
-            <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--accent);margin-bottom:0.25rem">Outcome</div>
+            <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--accent);margin-bottom:0.25rem">結果</div>
             <div style="font-size:2.1rem;font-weight:700;line-height:1">7 / 7</div>
-            <div style="color:var(--muted);margin-top:0.25rem">connectivity probes matched policy intent</div>
+            <div style="color:var(--muted);margin-top:0.25rem">連線探測與 policy 預期一致</div>
           </div>
           <div class="card" style="margin:0">
             <div style="display:grid;gap:0.5rem;font-size:0.93rem">
-              <div><strong>Allow side</strong> — all <code>zone1</code> internal probes on 18080 succeeded.</div>
-              <div><strong>Deny side</strong> — <code>zone1 ↔ zone2</code> in both directions were fully blocked.</div>
-              <div><strong>Safety</strong> — only host service tested; no SSH / control-plane / Cilium datapath probes.</div>
+              <div><strong>允許面</strong> — 所有 <code>zone1</code> 內部的 18080 探測都成功。</div>
+              <div><strong>拒絕面</strong> — <code>zone1 ↔ zone2</code> 兩個方向都被完整阻擋。</div>
+              <div><strong>安全性</strong> — 只測 host service，不碰 SSH、控制平面與 Cilium datapath。</div>
             </div>
           </div>
         </div>
       </div>
 
       <section class="section" id="topology">
-        <h2>Topology</h2>
+        <h2>拓樸</h2>
         <div class="figure-frame">
-          <svg viewBox="0 0 1120 620" role="img" aria-label="Zone isolation topology">
+          <svg viewBox="0 0 1120 620" role="img" aria-label="Zone 隔離拓樸">
             <defs>
               <marker id="zone-arrow" markerWidth="14" markerHeight="12" refX="11" refY="6" orient="auto-start-reverse">
                 <path d="M 0 1 L 11 6 L 0 11 L 3 6 Z" fill="#22d3ee" stroke="#0b0f17" stroke-width="1"></path>
@@ -64,37 +63,37 @@
 
             <rect x="56" y="116" width="240" height="76" rx="6" fill="#121821" stroke="#1f2a3a"></rect>
             <text x="70" y="138" fill="#e2e8f0" font-size="13" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Datastore</text>
-            <text x="70" y="156" fill="#94a3b8" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">k3s API on 10.70.10.10</text>
-            <text x="70" y="172" fill="#64748b" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">all HostEndpoint metadata lives here</text>
+            <text x="70" y="156" fill="#94a3b8" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">k3s API 位於 10.70.10.10</text>
+            <text x="70" y="172" fill="#64748b" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">所有 HostEndpoint metadata 都在這裡</text>
 
             <rect x="56" y="204" width="240" height="80" rx="6" fill="#121821" stroke="#1f2a3a"></rect>
-            <text x="70" y="226" fill="#e2e8f0" font-size="13" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Selector Set</text>
+            <text x="70" y="226" fill="#e2e8f0" font-size="13" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Selector 集合</text>
             <text x="70" y="244" fill="#94a3b8" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">experiment = zone-isolation</text>
             <text x="70" y="260" fill="#64748b" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">zone = zone1 / zone2</text>
 
             <rect x="56" y="296" width="240" height="88" rx="6" fill="#121821" stroke="#1f2a3a"></rect>
-            <text x="70" y="318" fill="#e2e8f0" font-size="13" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Policy Set</text>
-            <text x="70" y="336" fill="#94a3b8" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">allow zone1 → zone1</text>
-            <text x="70" y="352" fill="#94a3b8" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">deny zone2 → zone1</text>
-            <text x="70" y="368" fill="#94a3b8" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">deny zone1 → zone2</text>
+            <text x="70" y="318" fill="#e2e8f0" font-size="13" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Policy 集合</text>
+            <text x="70" y="336" fill="#94a3b8" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">允許 zone1 → zone1</text>
+            <text x="70" y="352" fill="#94a3b8" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">拒絕 zone2 → zone1</text>
+            <text x="70" y="368" fill="#94a3b8" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">拒絕 zone1 → zone2</text>
 
             <!-- Host Firewall box -->
             <rect x="348" y="132" width="240" height="224" rx="8" fill="#121821" stroke="#334155" stroke-width="1.5"></rect>
-            <text x="366" y="160" fill="#e2e8f0" font-size="15" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Host Firewall</text>
-            <text x="366" y="180" fill="#94a3b8" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">Calico selector-based policy</text>
+            <text x="366" y="160" fill="#e2e8f0" font-size="15" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">主機防火牆</text>
+            <text x="366" y="180" fill="#94a3b8" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">Calico 以 selector 驅動的 policy</text>
 
             <rect x="366" y="200" width="200" height="36" rx="5" fill="#1a2330" stroke="#1f2a3a"></rect>
-            <text x="378" y="222" fill="#cbd5e1" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">scope: TCP 18080 only</text>
+            <text x="378" y="222" fill="#cbd5e1" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">範圍：只測 TCP 18080</text>
 
             <rect x="366" y="244" width="200" height="36" rx="5" fill="#0f2a1f" stroke="#4ade80"></rect>
-            <text x="378" y="266" fill="#4ade80" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">zone1 ↔ zone1 allow</text>
+            <text x="378" y="266" fill="#4ade80" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">zone1 ↔ zone1 允許</text>
 
             <rect x="366" y="288" width="200" height="36" rx="5" fill="#2a2110" stroke="#fbbf24"></rect>
-            <text x="378" y="310" fill="#fbbf24" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">zone1 ↔ zone2 deny</text>
+            <text x="378" y="310" fill="#fbbf24" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">zone1 ↔ zone2 拒絕</text>
 
             <!-- Zone 1 -->
             <rect x="628" y="42" width="440" height="260" rx="8" fill="#121821" stroke="#4ade80" stroke-width="1.5"></rect>
-            <text x="648" y="72" fill="#e2e8f0" font-size="17" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Zone 1 — allow domain</text>
+            <text x="648" y="72" fill="#e2e8f0" font-size="17" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Zone 1 — 允許域</text>
 
             <rect x="648" y="90" width="180" height="64" rx="6" fill="#1a2330" stroke="#1f2a3a"></rect>
             <text x="660" y="110" fill="#e2e8f0" font-size="12" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">legacy-01</text>
@@ -114,7 +113,7 @@
 
             <!-- Zone 2 -->
             <rect x="628" y="326" width="440" height="134" rx="8" fill="#121821" stroke="#fbbf24" stroke-width="1.5"></rect>
-            <text x="648" y="356" fill="#e2e8f0" font-size="17" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Zone 2 — isolated target</text>
+            <text x="648" y="356" fill="#e2e8f0" font-size="17" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Zone 2 — 隔離目標</text>
 
             <rect x="648" y="378" width="210" height="46" rx="6" fill="#1a2330" stroke="#1f2a3a"></rect>
             <text x="660" y="402" fill="#e2e8f0" font-size="12" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">legacy-02 / 10.70.20.21</text>
@@ -125,44 +124,45 @@
             <path d="M 588 280 H 610 V 360 H 628" fill="none" stroke="#22d3ee" stroke-width="3.5" marker-end="url(#zone-arrow)"></path>
 
             <rect x="308" y="190" width="96" height="24" rx="4" fill="#1a2330" stroke="#1f2a3a"></rect>
-            <text x="318" y="206" fill="#67e8f9" font-size="9" font-family="ui-sans-serif, system-ui, sans-serif">metadata sync</text>
+            <text x="318" y="206" fill="#67e8f9" font-size="9" font-family="ui-sans-serif, system-ui, sans-serif">metadata 同步</text>
 
             <rect x="578" y="128" width="92" height="24" rx="4" fill="#1a2330" stroke="#1f2a3a"></rect>
-            <text x="588" y="144" fill="#67e8f9" font-size="9" font-family="ui-sans-serif, system-ui, sans-serif">zone1 rules</text>
+            <text x="588" y="144" fill="#67e8f9" font-size="9" font-family="ui-sans-serif, system-ui, sans-serif">zone1 規則</text>
 
             <rect x="578" y="392" width="92" height="24" rx="4" fill="#1a2330" stroke="#1f2a3a"></rect>
-            <text x="588" y="408" fill="#67e8f9" font-size="9" font-family="ui-sans-serif, system-ui, sans-serif">zone2 rules</text>
+            <text x="588" y="408" fill="#67e8f9" font-size="9" font-family="ui-sans-serif, system-ui, sans-serif">zone2 規則</text>
           </svg>
           <div class="figure-caption">
-            Three layers only: control plane, policy engine, managed estates. Jumpbox, placeholder nodes and raw YAML are omitted so the only thing you see is how policy flows from cluster-1 into zone1 and zone2.
+            只保留三層：控制平面、policy engine、受管理 estate。刻意省略 jumpbox、placeholder nodes 與原始 YAML，
+            讓讀者直接看懂 policy 如何從 cluster-1 流向 zone1 與 zone2。
           </div>
         </div>
       </section>
 
       <section class="section" id="members">
-        <h2>Zone Members</h2>
+        <h2>Zone 成員</h2>
         <div class="zone-grid">
           <article class="zone-card zone1">
             <div class="zone-head">
               <div>
                 <div class="zone-tag zone1">Zone 1</div>
-                <h3 class="zone-title">Trusted East-West Group</h3>
-                <p class="zone-subtitle">The allow domain for this experiment.</p>
+                <h3 class="zone-title">可信 East-West 群組</h3>
+                <p class="zone-subtitle">這輪實驗中的允許域。</p>
               </div>
-              <span class="badge success">4 hosts</span>
+              <span class="badge success">4 台主機</span>
             </div>
             <div class="zone-members">
               <div class="zone-member">
                 <strong>legacy-01</strong>
-                <p><code>10.70.20.20</code> — standalone VM, Felix-only external host</p>
+                <p><code>10.70.20.20</code> — standalone VM，以 Felix-only external host 方式接入</p>
               </div>
               <div class="zone-member">
                 <strong>k3s2-server-0</strong>
-                <p><code>10.70.30.10</code> — cluster-2 control-plane node, external host</p>
+                <p><code>10.70.30.10</code> — cluster-2 control-plane node，以 external host 身分受管</p>
               </div>
               <div class="zone-member">
                 <strong>k3s2-agent-01 + k3s2-agent-02</strong>
-                <p><code>10.70.30.11-12</code> — cluster-2 workers, external hosts</p>
+                <p><code>10.70.30.11-12</code> — cluster-2 workers，以 external hosts 身分受管</p>
               </div>
             </div>
           </article>
@@ -171,15 +171,15 @@
             <div class="zone-head">
               <div>
                 <div class="zone-tag zone2">Zone 2</div>
-                <h3 class="zone-title">Isolated Service Group</h3>
-                <p class="zone-subtitle">The deny peer for this experiment.</p>
+                <h3 class="zone-title">隔離服務群組</h3>
+                <p class="zone-subtitle">這輪實驗中的拒絕對象。</p>
               </div>
-              <span class="badge warn">1 host</span>
+              <span class="badge warn">1 台主機</span>
             </div>
             <div class="zone-members">
               <div class="zone-member">
                 <strong>legacy-02</strong>
-                <p><code>10.70.20.21</code> — standalone VM, restricted profile + <code>zone=zone2</code></p>
+                <p><code>10.70.20.21</code> — standalone VM，套用 restricted profile + <code>zone=zone2</code></p>
               </div>
             </div>
           </article>
@@ -187,28 +187,28 @@
       </section>
 
       <section class="section" id="policy">
-        <h2>Policy Design</h2>
+        <h2>Policy 設計</h2>
         <div class="policy-grid">
           <article class="policy-card allow">
-            <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.05em;color:#166534;margin-bottom:0.15rem">ALLOW RULE</div>
+            <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.05em;color:#166534;margin-bottom:0.15rem">允許規則</div>
             <div class="policy-rule"><code>zone1 → zone1</code></div>
-            <p>For HostEndpoints with <code>zone == "zone1"</code>, allow same-zone sources on TCP 18080.</p>
+            <p>對所有 <code>zone == "zone1"</code> 的 HostEndpoint，允許同區來源在 TCP 18080 存取。</p>
           </article>
           <article class="policy-card deny">
-            <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.05em;color:#9a3412;margin-bottom:0.15rem">DENY RULE</div>
+            <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.05em;color:#9a3412;margin-bottom:0.15rem">拒絕規則</div>
             <div class="policy-rule"><code>zone2 → zone1</code></div>
-            <p>Explicitly deny traffic from zone2 to any zone1 HostEndpoint on TCP 18080.</p>
+            <p>明確拒絕所有 zone2 來源在 TCP 18080 打到 zone1 HostEndpoint。</p>
           </article>
           <article class="policy-card deny">
-            <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.05em;color:#9a3412;margin-bottom:0.15rem">DENY RULE</div>
+            <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.05em;color:#9a3412;margin-bottom:0.15rem">拒絕規則</div>
             <div class="policy-rule"><code>zone1 → zone2</code></div>
-            <p>Explicitly deny traffic from zone1 to zone2 HostEndpoints on TCP 18080.</p>
+            <p>明確拒絕所有 zone1 來源在 TCP 18080 打到 zone2 HostEndpoint。</p>
           </article>
         </div>
 
         <div class="grid two" style="margin-top:1rem">
           <div class="card">
-            <h3>Manifests</h3>
+            <h3>使用的 manifest</h3>
             <ul>
               <li><code>manifests/calico/zone-experiment/00-zone-hostendpoints.yaml</code></li>
               <li><code>manifests/calico/zone-experiment/10-allow-zone1-to-zone1-http.yaml</code></li>
@@ -216,21 +216,21 @@
             </ul>
           </div>
           <div class="card">
-            <h3>Experiment entrypoint</h3>
+            <h3>實驗入口腳本</h3>
             <ul>
               <li><code>scripts/run-zone-isolation-experiment.sh</code></li>
-              <li>Creates <code>lab-zone-http.service</code> on the five external hosts</li>
-              <li>Uses <code>curl</code> from each host to probe TCP 18080</li>
+              <li>在五台 external hosts 上建立 <code>lab-zone-http.service</code></li>
+              <li>從各主機以 <code>curl</code> 探測 TCP 18080</li>
             </ul>
           </div>
         </div>
       </section>
 
       <section class="section" id="matrix">
-        <h2>Allow / Deny Matrix</h2>
+        <h2>允許 / 拒絕 矩陣</h2>
         <div class="matrix-board">
           <div class="matrix-grid">
-            <div class="matrix-corner">Source / Dest</div>
+            <div class="matrix-corner">來源 / 目的地</div>
             <div class="matrix-colhead">
               <strong>Zone 1</strong>
               <span>legacy-01 + cluster-2</span>
@@ -241,61 +241,61 @@
             </div>
 
             <div class="matrix-rowhead">
-              <strong>Zone 1</strong><span>source</span>
+              <strong>Zone 1</strong><span>來源</span>
             </div>
             <div class="matrix-cell allow">
-              <span class="matrix-state allow">Allow</span>
-              <strong>East-West allowed</strong>
+              <span class="matrix-state allow">允許</span>
+              <strong>同區 East-West 可通</strong>
               <p><code>legacy-01 ↔ k3s2-server-0</code></p>
               <p><code>k3s2-agent-01 ↔ k3s2-agent-02</code></p>
             </div>
             <div class="matrix-cell deny">
-              <span class="matrix-state deny">Deny</span>
-              <strong>Cross-zone blocked</strong>
+              <span class="matrix-state deny">拒絕</span>
+              <strong>跨區阻擋</strong>
               <p><code>legacy-01 → legacy-02</code></p>
               <p><code>k3s2-server-0 → legacy-02</code></p>
             </div>
 
             <div class="matrix-rowhead">
-              <strong>Zone 2</strong><span>source</span>
+              <strong>Zone 2</strong><span>來源</span>
             </div>
             <div class="matrix-cell deny">
-              <span class="matrix-state deny">Deny</span>
-              <strong>Return path blocked</strong>
+              <span class="matrix-state deny">拒絕</span>
+              <strong>回程阻擋</strong>
               <p><code>legacy-02 → legacy-01</code></p>
               <p><code>legacy-02 → k3s2-server-0</code></p>
             </div>
             <div class="matrix-cell na">
-              <span class="matrix-state na">N/A</span>
-              <strong>Not tested</strong>
-              <p>Only one zone2 host — no <code>zone2 → zone2</code> case in this round.</p>
+              <span class="matrix-state na">不適用</span>
+              <strong>未測試</strong>
+              <p>本輪只有一台 zone2 host，所以沒有 <code>zone2 → zone2</code> 情境。</p>
             </div>
           </div>
         </div>
       </section>
 
       <section class="section" id="conclusion">
-        <h2>Conclusions</h2>
+        <h2>結論</h2>
         <div class="callout-grid">
           <article class="callout">
-            <strong>What this round proved</strong>
-            <p>Calico can drive host-level zoning across cluster-2 nodes and standalone VMs without taking over the CNI on cluster-2.</p>
+            <strong>這輪證明了什麼</strong>
+            <p>Calico 能在不接管 cluster-2 CNI 的前提下，把 host-level zoning 一致下發到 cluster-2 nodes 與 standalone VMs。</p>
           </article>
           <article class="callout">
-            <strong>Scope we deliberately limited</strong>
-            <p>Only TCP 18080. No blanket zone firewall so we would not accidentally break SSH, the k3s control plane, or Cilium itself.</p>
+            <strong>刻意收斂的範圍</strong>
+            <p>只測 TCP 18080，不做整區封鎖，避免不小心打壞 SSH、k3s control plane 或 Cilium 本身。</p>
           </article>
           <article class="callout">
-            <strong>Next</strong>
-            <p>Expand the current zone labels to multiple ports, richer profiles, and rules closer to real identity-based firewall models.</p>
+            <strong>下一步</strong>
+            <p>把目前的 zone labels 擴展到更多 port、更豐富的 profile，以及更接近真實 identity-based firewall 的規則。</p>
           </article>
         </div>
       </section>
 
       <section class="footer">
         <p>
-          Back to <a href="../experiments.html">Experiments hub</a> ·
-          Onboarding details in <a href="../install.html">Install Guide</a>
+          回到 <a href="../experiments.html">驗證看板</a> ·
+          需要 setup 與 archive 文件時請看 <a href="../install.html">安裝與支援</a>
         </p>
       </section>
     </main>

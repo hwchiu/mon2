@@ -3,224 +3,170 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Overview · Calico Central Firewall Lab</title>
+  <title>總覽 · Host Firewall Validation Lab</title>
   <link rel="stylesheet" href="./assets/site.css">
 </head>
 <body>
   <header class="topnav">
     <div class="topnav-inner">
-      <a class="brand" href="./index.html">Calico Central Firewall Lab</a>
+      <a class="brand" href="./index.html">Host Firewall Validation Lab</a>
       <nav class="topnav-links" aria-label="Primary">
-        <a href="./index.html" class="active">Overview</a>
-        <a href="./install.html">Install Guide</a>
-        <a href="./experiments.html">Experiments</a>
+        <a href="./index.html" class="active">總覽</a>
+        <a href="./experiments.html">驗證看板</a>
+        <a href="./install.html">安裝與支援</a>
       </nav>
-      <div class="topnav-actions">
-        <!-- GitHub link can be added here when the repo is public -->
-      </div>
     </div>
   </header>
 
   <main class="shell">
-      <div class="hero">
-        <span class="eyebrow">Current Architecture</span>
-        <h1>集中式 Calico HostEndpoint Lab</h1>
-        <p>
-          環境目前已經進到第二階段：保留一個 cluster-1 作為唯一 Calico control plane，
-          第二個 Kubernetes 叢集維持 Cilium-only，而它的每個 node 連同兩台 standalone VM，
-          全部都以 external host 模型接回 cluster-1 的 Calico datastore。
-        </p>
+    <div class="hero hero-portal">
+      <span class="eyebrow">中性入口</span>
+      <h1>Host Firewall Validation Lab</h1>
+      <p>
+        這個 repo 不是單一產品展示頁，而是一個持續演進的驗證入口網站。它用同一套 Azure lab
+        比較不同控制平面下的 host / standalone firewall story，並把結果分成清楚的 verdict，
+        讓讀者能快速區分成功、限制與失敗。
+      </p>
+    </div>
+
+    <section class="section" id="purpose">
+      <h2>這個入口網站在做什麼</h2>
+      <div class="grid three">
+        <div class="card">
+          <h3>驗證對象</h3>
+          <p>聚焦在 Kubernetes nodes、Linux standalone VM、Windows standalone VM 三類 target。</p>
+        </div>
+        <div class="card">
+          <h3>驗證方式</h3>
+          <p>先維持範圍可控，再用單一 port、單一服務、明確 matrix 去驗證 allow / deny 行為。</p>
+        </div>
+        <div class="card">
+          <h3>判讀原則</h3>
+          <p>產品限制、deprecated path、lab/config error 分開記錄，不混成一個模糊結論。</p>
+        </div>
       </div>
+    </section>
 
-      <section class="section" id="env">
-        <h2>Environment</h2>
-        <div class="grid four">
-          <div class="stat">
-            <div class="value">2</div>
-            <div class="label">Kubernetes Clusters</div>
-            <div class="sub"><code>hep-0605-0534-k3s</code> + <code>hep-0605-0534-k3s2</code></div>
-          </div>
-          <div class="stat">
-            <div class="value">2</div>
-            <div class="label">Standalone VMs</div>
-            <div class="sub"><code>legacy-01</code> / <code>legacy-02</code> (Felix-only)</div>
-          </div>
-          <div class="stat">
-            <div class="value">1</div>
-            <div class="label">Calico Control Plane</div>
-            <div class="sub">cluster-1 only (datastore + HostEndpoint + GNP)</div>
-          </div>
-          <div class="stat">
-            <div class="value">5</div>
-            <div class="label">External Hosts</div>
-            <div class="sub">All managed by the single Calico plane</div>
-          </div>
+    <section class="section" id="status">
+      <h2>目前狀態</h2>
+      <div class="grid four">
+        <div class="stat">
+          <div class="value">2</div>
+          <div class="label">驗證軌道</div>
+          <div class="sub">Calico / Cilium</div>
         </div>
-      </section>
-
-      <section class="section" id="arch">
-        <h2>Architecture</h2>
-        <p>
-          圖只保留兩條管理線，避免把 jumpbox、kubeconfig、placeholder node 全部畫進去後互相重疊。
-          重點是 cluster-1 的 Calico control plane 往右管理兩個 estate：cluster-2 nodes 與 standalone VMs。
-        </p>
-        <div class="figure-frame">
-          <svg viewBox="0 0 1120 540" role="img" aria-label="Current centralized Calico lab architecture">
-            <defs>
-              <marker id="current-arrow" markerWidth="14" markerHeight="12" refX="11" refY="6" orient="auto-start-reverse">
-                <path d="M 0 1 L 11 6 L 0 11 L 3 6 Z" fill="#22d3ee" stroke="#0b0f17" stroke-width="1"></path>
-              </marker>
-            </defs>
-
-            <!-- Cluster-1 -->
-            <rect x="36" y="34" width="372" height="410" rx="8" fill="#1a2330" stroke="#334155" stroke-width="1.5"></rect>
-            <text x="56" y="66" fill="#e2e8f0" font-size="20" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Cluster-1</text>
-            <text x="56" y="86" fill="#94a3b8" font-size="12" font-family="ui-sans-serif, system-ui, sans-serif">k3s + Cilium + Calico policy-only</text>
-
-            <rect x="56" y="108" width="332" height="74" rx="6" fill="#121821" stroke="#1f2a3a"></rect>
-            <text x="70" y="132" fill="#e2e8f0" font-size="14" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Kubernetes datastore</text>
-            <text x="70" y="150" fill="#94a3b8" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">server-0 / 10.70.10.10</text>
-            <text x="70" y="166" fill="#64748b" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">Calico metadata source and kube-api endpoint</text>
-
-            <rect x="56" y="192" width="332" height="74" rx="6" fill="#121821" stroke="#1f2a3a"></rect>
-            <text x="70" y="216" fill="#e2e8f0" font-size="14" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Cilium datapath</text>
-            <text x="70" y="234" fill="#94a3b8" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">3 real nodes / pod networking stays in Cilium</text>
-            <text x="70" y="250" fill="#64748b" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">Calico does not own CNI, IPAM, or pod routes</text>
-
-            <rect x="56" y="276" width="332" height="74" rx="6" fill="#121821" stroke="#1f2a3a"></rect>
-            <text x="70" y="300" fill="#e2e8f0" font-size="14" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Calico control plane</text>
-            <text x="70" y="318" fill="#94a3b8" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">HostEndpoint / GlobalNetworkPolicy / Felix state</text>
-            <text x="70" y="334" fill="#64748b" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">One datastore, shared by cluster-1 and all external hosts</text>
-
-            <rect x="458" y="54" width="626" height="166" rx="8" fill="#121821" stroke="#334155" stroke-width="1.5"></rect>
-            <text x="476" y="80" fill="#e2e8f0" font-size="17" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Cluster-2 Host Estate</text>
-            <text x="476" y="100" fill="#94a3b8" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">k3s + Cilium stays local; nodes onboarded to cluster-1 as external hosts</text>
-
-            <rect x="476" y="120" width="180" height="60" rx="5" fill="#1a2330" stroke="#1f2a3a"></rect>
-            <text x="488" y="140" fill="#e2e8f0" font-size="12" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">k3s2-server-0</text>
-            <text x="488" y="156" fill="#94a3b8" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">10.70.30.10 / Felix active</text>
-
-            <rect x="668" y="120" width="180" height="60" rx="5" fill="#1a2330" stroke="#1f2a3a"></rect>
-            <text x="680" y="140" fill="#e2e8f0" font-size="12" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">k3s2-agent-01</text>
-            <text x="680" y="156" fill="#94a3b8" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">10.70.30.11 / Felix active</text>
-
-            <rect x="860" y="120" width="180" height="60" rx="5" fill="#1a2330" stroke="#1f2a3a"></rect>
-            <text x="872" y="140" fill="#e2e8f0" font-size="12" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">k3s2-agent-02</text>
-            <text x="872" y="156" fill="#94a3b8" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">10.70.30.12 / Felix active</text>
-
-            <!-- Standalone -->
-            <rect x="458" y="238" width="626" height="148" rx="8" fill="#121821" stroke="#334155" stroke-width="1.5"></rect>
-            <text x="476" y="264" fill="#e2e8f0" font-size="17" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">Standalone VM Estate</text>
-            <text x="476" y="284" fill="#94a3b8" font-size="11" font-family="ui-sans-serif, system-ui, sans-serif">Non-cluster hosts managed through the same Calico datastore</text>
-
-            <rect x="476" y="306" width="280" height="60" rx="5" fill="#1a2330" stroke="#1f2a3a"></rect>
-            <text x="488" y="326" fill="#e2e8f0" font-size="12" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">legacy-01</text>
-            <text x="488" y="342" fill="#94a3b8" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">10.70.20.20 / Felix active / HostEndpoint</text>
-
-            <rect x="772" y="306" width="280" height="60" rx="5" fill="#1a2330" stroke="#1f2a3a"></rect>
-            <text x="784" y="326" fill="#e2e8f0" font-size="12" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600">legacy-02</text>
-            <text x="784" y="342" fill="#94a3b8" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">10.70.20.21 / Felix active / HostEndpoint</text>
-
-            <!-- Arrows + labels -->
-            <line x1="408" y1="335" x2="458" y2="335" stroke="#22d3ee" stroke-width="3.5" marker-end="url(#current-arrow)"></line>
-            <text x="414" y="320" fill="#67e8f9" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">shared Calico control plane</text>
-
-            <line x1="408" y1="322" x2="458" y2="150" stroke="#22d3ee" stroke-width="3.5" marker-end="url(#current-arrow)"></line>
-            <text x="414" y="192" fill="#67e8f9" font-size="10" font-family="ui-sans-serif, system-ui, sans-serif">nodes treated as external hosts</text>
-
-            <!-- Note bar -->
-            <rect x="36" y="462" width="1048" height="44" rx="6" fill="#121821" stroke="#1f2a3a"></rect>
-            <text x="52" y="488" fill="#cbd5e1" font-size="11.5" font-family="ui-sans-serif, system-ui, sans-serif">
-              補充：cluster-1 的 Kubernetes API 內會額外看到 5 個 placeholder Node 物件，它們代表 external hosts，因此顯示為 NotReady,SchedulingDisabled 是預期行為。
-            </text>
-          </svg>
+        <div class="stat">
+          <div class="value">3</div>
+          <div class="label">目標類型</div>
+          <div class="sub">Cluster nodes / Linux VM / Windows VM</div>
         </div>
-      </section>
-
-      <section class="section" id="inventory">
-        <h2>Inventory</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Domain</th>
-              <th>Name</th>
-              <th>Count / Addresses</th>
-              <th>Control Model</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Cluster-1</td>
-              <td><code>hep-0605-0534-k3s</code></td>
-              <td>3 real nodes / 10.70.10.10-12</td>
-              <td>Cilium is the only CNI; Calico provides policy-only control plane.</td>
-            </tr>
-            <tr>
-              <td>Cluster-2</td>
-              <td><code>hep-0605-0534-k3s2</code></td>
-              <td>3 real nodes / 10.70.30.10-12</td>
-              <td>Cilium inside cluster; each node joined to cluster-1 as Felix-only external host.</td>
-            </tr>
-            <tr>
-              <td>Standalone VM</td>
-              <td><code>legacy-01</code>, <code>legacy-02</code></td>
-              <td>2 VMs / 10.70.20.20-21</td>
-              <td>No Kubernetes; only <code>calico-node -felix</code>.</td>
-            </tr>
-            <tr>
-              <td>External-host inventory</td>
-              <td>cluster-2 nodes + legacy VMs</td>
-              <td>5 hosts total</td>
-              <td>5 placeholder Nodes + 5 HostEndpoints in cluster-1 API.</td>
-            </tr>
-            <tr>
-              <td>HostEndpoints</td>
-              <td>cluster-1 (1) + external (5)</td>
-              <td>6 total</td>
-              <td>Host-level policy path complete; identity-based firewall experiments not yet started.</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section class="section" id="scope">
-        <h2>Current Scope</h2>
-        <div class="grid three">
-          <div class="card">
-            <span class="status ok">Ready</span>
-            <h3>Single Calico Management Plane</h3>
-            <p>All HostEndpoints and GlobalNetworkPolicies are still published from cluster-1.</p>
-          </div>
-          <div class="card">
-            <span class="status ok">Ready</span>
-            <h3>Multiple Managed Estates</h3>
-            <p>cluster-2 nodes and standalone VMs are simultaneously attached to the same Calico control plane.</p>
-          </div>
-          <div class="card">
-            <span class="status warn">Pending</span>
-            <h3>Identity Firewall</h3>
-            <p>True identity-based firewall testing has not started. The experiments page currently only shows host-level results.</p>
-          </div>
+        <div class="stat">
+          <div class="value">2026-06-18</div>
+          <div class="label">最新實測輪次</div>
+          <div class="sub">Cilium standalone validation</div>
         </div>
-      </section>
-
-      <section class="footer">
-        <h2>Documentation</h2>
-        <div class="grid two">
-          <div class="card">
-            <h3>Install Guide</h3>
-            <p>Detailed steps for provisioning cluster-1, cluster-2, standalone VMs and onboarding external hosts.</p>
-            <a href="./install.html">Open Install Guide →</a>
-          </div>
-          <div class="card">
-            <h3>Experiments</h3>
-            <p>Host identity segmentation results (zone isolation) and future work tracking.</p>
-            <a href="./experiments.html">Open Experiments →</a>
-          </div>
+        <div class="stat">
+          <div class="value">18080/TCP</div>
+          <div class="label">受控測試埠</div>
+          <div class="sub">避免干擾 SSH、RDP、kube-api、DNS</div>
         </div>
-        <p style="margin-top:1.1rem;font-size:0.8rem">This site is served from <code>docs/</code> and kept in sync by GitHub Actions / Pages.</p>
-      </section>
-    </main>
+      </div>
+    </section>
+
+    <section class="section" id="tracks">
+      <h2>驗證軌道</h2>
+      <div class="grid two track-grid">
+        <article class="track-card">
+          <span class="status ok">Calico 軌道</span>
+          <h3>集中式 HostEndpoint / GlobalNetworkPolicy</h3>
+          <p>
+            既有成熟路線。重點是用單一 Calico control plane 管理 cluster-2 nodes 與 standalone VMs，
+            並驗證 host-level zoning 是否可跨 estate 一致生效。
+          </p>
+          <div class="verdict-list">
+            <span class="badge success">Supported pass</span>
+          </div>
+          <div class="track-meta">
+            <div><strong>控制平面：</strong>cluster-1 Calico policy-only</div>
+            <div><strong>涵蓋範圍：</strong>cluster-2 nodes + standalone VMs</div>
+            <div><strong>最新 round：</strong>zone1 / zone2 host isolation 已完成並通過</div>
+          </div>
+          <p style="margin-top:0.9rem"><a href="./experiments/zone-isolation.html">查看 Calico 詳細結果 →</a></p>
+        </article>
+
+        <article class="track-card">
+          <span class="status warn">Cilium 軌道</span>
+          <h3>Cluster host policy + deprecated external workload</h3>
+          <p>
+            最新真實部署路線。重點是驗證一個 k3s + Cilium cluster 是否能當作 policy source of truth，
+            同時覆蓋 cluster nodes、Linux standalone VM 與 Windows VM。
+          </p>
+          <div class="verdict-list">
+            <span class="badge warn">Supported fail</span>
+            <span class="badge warn">Deprecated path fail</span>
+            <span class="badge neutral">No official standalone Windows path found</span>
+          </div>
+          <div class="track-meta">
+            <div><strong>控制平面：</strong>單一 k3s + Cilium cluster</div>
+            <div><strong>涵蓋範圍：</strong>cluster nodes、Linux deprecated path、Windows observation branch</div>
+            <div><strong>最新 round：</strong>真實部署已完成，但 deny enforcement 與 Windows standalone path 未被驗證成功</div>
+          </div>
+          <p style="margin-top:0.9rem"><a href="./experiments/cilium-standalone-validation.html">查看 Cilium 詳細結果 →</a></p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="classification">
+      <h2>如何判讀結果</h2>
+      <div class="grid three">
+        <div class="card">
+          <span class="badge success">Supported pass</span>
+          <p style="margin-top:0.55rem">代表主要驗證路徑在宣告的 matrix 下運作正常，且沒有把環境打壞。</p>
+        </div>
+        <div class="card">
+          <span class="badge neutral">產品限制</span>
+          <p style="margin-top:0.55rem">代表環境本身可達、bootstrap 沒壞，但沒有找到官方支援或可成立的產品路徑。</p>
+        </div>
+        <div class="card">
+          <span class="badge danger">驗證失敗</span>
+          <p style="margin-top:0.55rem">代表路徑有被正確嘗試，但結果不符合預期，或關鍵 policy 沒有真正生效。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="support">
+      <h2>支援文件</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3>驗證看板</h3>
+          <p>先看兩條驗證軌的摘要、最新結果與下一步，再決定要不要深入某一條詳細頁。</p>
+          <a href="./experiments.html">打開驗證看板 →</a>
+        </div>
+        <div class="card">
+          <h3>安裝與支援</h3>
+          <p>保留 Azure 佈建、Calico onboarding、archive runbook 與其他支援型文件。</p>
+          <a href="./install.html">打開安裝與支援頁 →</a>
+        </div>
+        <div class="card">
+          <h3>Cilium 原始紀錄</h3>
+          <p>若需要逐段閱讀這次真實 round 的完整 markdown 記錄，可直接查看原始文件。</p>
+          <a href="./cilium-standalone-host-validation.md">閱讀 Cilium 原始記錄 →</a>
+        </div>
+        <div class="card">
+          <h3>Calico 原始紀錄</h3>
+          <p>若要回到早期設計與執行 runbook，可從這裡進入 Calico 的 markdown 文件。</p>
+          <a href="./calico-hostendpoint-execution-runbook.md">閱讀 Calico runbook →</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="footer">
+      <p>
+        本站由 repo 的 <code>docs/</code> 目錄直接發佈到 GitHub Pages。
+        入口頁負責分類與導覽；每條驗證軌的細節與限制都放在各自的結果頁中。
+      </p>
+    </section>
+  </main>
 
   <script>
     (function() {

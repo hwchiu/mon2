@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cilium Standalone Validation · Host Firewall Validation Lab</title>
+  <link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+  <header class="topnav">
+    <div class="topnav-inner">
+      <a class="brand" href="../index.html">Host Firewall Validation Lab</a>
+      <nav class="topnav-links" aria-label="Primary">
+        <a href="../index.html">總覽</a>
+        <a href="../experiments.html" class="active">驗證看板</a>
+        <a href="../install.html">安裝與支援</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="shell">
+    <div class="hero">
+      <span class="eyebrow">Cilium Track</span>
+      <h1>Cilium Standalone Host 驗證</h1>
+      <p>
+        這一頁只整理 2026-06-18 真實部署 round 的關鍵結果。重點不是把三個 target 混成一個 headline，
+        而是分開呈現 Kubernetes nodes、Linux standalone VM、Windows standalone VM 的實際 verdict。
+      </p>
+      <div class="verdict-list">
+        <span class="badge warn">Supported fail</span>
+        <span class="badge warn">Deprecated path fail</span>
+        <span class="badge neutral">No official standalone Windows path found</span>
+      </div>
+    </div>
+
+    <section class="section">
+      <h2>快速結論</h2>
+      <div class="grid three">
+        <article class="card">
+          <span class="badge warn">Supported fail</span>
+          <h3>Kubernetes 節點</h3>
+          <p>cluster-side host firewall 有成功啟用，但 zone1 / zone2 cross-zone deny 仍放行。</p>
+        </article>
+        <article class="card">
+          <span class="badge warn">Deprecated path fail</span>
+          <h3>Linux 獨立 VM</h3>
+          <p>deprecated external workload 有 attach，但 VM 本地 `policy get` 仍為空，沒有實際 enforcement。</p>
+        </article>
+        <article class="card">
+          <span class="badge neutral">No official standalone Windows path found</span>
+          <h3>Windows 獨立 VM</h3>
+          <p>Windows VM 與 IIS 服務都正常，但沒有建立出可信、官方支援的 standalone Cilium-managed path。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>實際部署環境</h2>
+      <div class="grid four">
+        <div class="stat">
+          <div class="value">1</div>
+          <div class="label">Policy 來源</div>
+          <div class="sub">單一 k3s + Cilium cluster</div>
+        </div>
+        <div class="stat">
+          <div class="value">1.17.6</div>
+          <div class="label">Cilium 版本</div>
+          <div class="sub">pinned live round</div>
+        </div>
+        <div class="stat">
+          <div class="value">v0.16.24</div>
+          <div class="label">Cilium CLI</div>
+          <div class="sub">needed for deprecated vm workflow</div>
+        </div>
+        <div class="stat">
+          <div class="value">18080/TCP</div>
+          <div class="label">測試面</div>
+          <div class="sub">dedicated HTTP probe only</div>
+        </div>
+      </div>
+      <div class="grid two" style="margin-top:0.9rem">
+        <div class="callout">
+          <strong>拓樸</strong>
+          <p>1 jumpbox、1 k3s server、2 k3s agents、1 Linux standalone VM、1 Windows standalone VM。</p>
+        </div>
+        <div class="callout">
+          <strong>基線</strong>
+          <p>Terraform apply 成功、三個 k3s nodes Ready、Linux probe 正常、Windows SSH 與 IIS 正常。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>測試矩陣</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>測項</th>
+            <th>來源</th>
+            <th>目的地</th>
+            <th>預期</th>
+            <th>實際</th>
+            <th>結果</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>node-zone1-allow</code></td>
+            <td><code>hep-lab-k3s-server-0</code></td>
+            <td><code>hep-lab-k3s-agent-01</code></td>
+            <td>allow</td>
+            <td>allow</td>
+            <td><span class="badge success">PASS</span></td>
+          </tr>
+          <tr>
+            <td><code>node-zone2-to-zone1-deny</code></td>
+            <td><code>hep-lab-k3s-agent-02</code></td>
+            <td><code>hep-lab-k3s-server-0</code></td>
+            <td>deny</td>
+            <td>allow</td>
+            <td><span class="badge danger">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>node-zone1-to-zone2-deny</code></td>
+            <td><code>hep-lab-k3s-server-0</code></td>
+            <td><code>hep-lab-k3s-agent-02</code></td>
+            <td>deny</td>
+            <td>allow</td>
+            <td><span class="badge danger">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>linux-zone1-allow</code></td>
+            <td><code>hep-lab-k3s-server-0</code></td>
+            <td><code>hep-lab-cilium-linux</code></td>
+            <td>allow</td>
+            <td>allow</td>
+            <td><span class="badge success">PASS</span></td>
+          </tr>
+          <tr>
+            <td><code>linux-zone2-to-linux-deny</code></td>
+            <td><code>hep-lab-k3s-agent-02</code></td>
+            <td><code>hep-lab-cilium-linux</code></td>
+            <td>deny</td>
+            <td>allow</td>
+            <td><span class="badge danger">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>linux-to-zone2-deny</code></td>
+            <td><code>hep-lab-cilium-linux</code></td>
+            <td><code>hep-lab-k3s-agent-02</code></td>
+            <td>deny</td>
+            <td>allow</td>
+            <td><span class="badge danger">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>windows-iis-observe</code></td>
+            <td><code>hep-lab-k3s-server-0</code></td>
+            <td><code>heplabciliumwin</code></td>
+            <td>observe</td>
+            <td>allow</td>
+            <td><span class="badge neutral">OBSERVE</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>關鍵判讀</h2>
+      <div class="callout-grid">
+        <article class="callout fail">
+          <strong>Cluster node 路徑</strong>
+          <p>
+            host firewall 最終有被啟用，`policy-cidr-match-mode=nodes` 也有補上，但在 pinned 1.17.6
+            的這個 host-policy 形狀下，cross-zone deny 仍沒有成為可觀察到的有效封鎖。
+          </p>
+        </article>
+        <article class="callout fail">
+          <strong>Linux deprecated 路徑</strong>
+          <p>
+            external workload registration 存在，cluster identity 也存在，但 Linux VM 本地
+            `policy get []`、`Host firewall: Disabled`，所以它不能算通過。
+          </p>
+        </article>
+        <article class="callout limitation">
+          <strong>Windows 分支</strong>
+          <p>
+            Windows VM 與 IIS 都正常，這不是 bootstrap failure。真正缺的是一條可信、官方支援的
+            standalone Cilium-managed Windows path，因此這一列應歸類為產品限制，而不是 lab error。
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>主要 live findings</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3>Cluster 端</h3>
+          <ul>
+            <li>必須額外啟用 <code>hostFirewall.enabled=true</code> 與 <code>devices=eth0</code>。</li>
+            <li>必須補上 <code>policy-cidr-match-mode=nodes</code> 才能讓 peer node IP 出現 <code>cidr:*</code> identity。</li>
+            <li>即使如此，host endpoint 的 BPF policy map 仍未呈現預期 deny entries。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Standalone 端</h3>
+          <ul>
+            <li>Linux deprecated path 需要先修正 <code>cluster.id = 1</code> 並重建 clustermesh。</li>
+            <li>Windows bootstrap template 只安裝 OpenSSH 與 IIS，並沒有安裝 standalone Cilium agent。</li>
+            <li>Windows row 的正確分類是 <code>No official standalone Windows path found</code>，不是 infrastructure bring-up failure。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>延伸閱讀</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3>原始記錄</h3>
+          <p>完整 live round 記錄、結果矩陣與 rollback 觀點都保留在 markdown 原始文件中。</p>
+          <a href="../cilium-standalone-host-validation.md">閱讀原始紀錄 →</a>
+        </div>
+        <div class="card">
+          <h3>設計規格</h3>
+          <p>若要回看 Cilium standalone 驗證在文件層是怎麼被定義與分類的，可直接閱讀設計規格。</p>
+          <a href="../superpowers/specs/2026-06-18-cilium-standalone-host-validation-design.md">查看 Cilium 設計規格 →</a>
+        </div>
+        <div class="card">
+          <h3>執行計畫</h3>
+          <p>若要回看這次真實部署 round 的執行順序、測試矩陣與預期判讀，可直接閱讀 implementation plan。</p>
+          <a href="../superpowers/plans/2026-06-18-cilium-standalone-validation.md">查看 Cilium 執行計畫 →</a>
+        </div>
+        <div class="card">
+          <h3>Runbook 與腳本入口</h3>
+          <p>更貼近環境與腳本層的支援資訊保留在安裝與支援頁，包含 cluster bring-up、接入流程與自動化腳本入口。</p>
+          <a href="../install.html#step6">前往支援入口與腳本說明 →</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="footer">
+      <p>
+        回到 <a href="../experiments.html">驗證看板</a> ·
+        回到 <a href="../index.html">總覽</a>
+      </p>
+    </section>
+  </main>
+
+  <script>
+    (function() {
+      document.querySelectorAll('pre').forEach(function(pre) {
+        var btn = document.createElement('button');
+        btn.className = 'copy-btn';
+        btn.textContent = 'copy';
+        btn.addEventListener('click', function() {
+          var text = pre.innerText || pre.textContent;
+          navigator.clipboard.writeText(text.trim()).then(function() {
+            var orig = btn.textContent;
+            btn.textContent = 'copied';
+            setTimeout(function(){ btn.textContent = orig; }, 1400);
+          });
+        });
+        pre.appendChild(btn);
+      });
+    })();
+  </script>
+</body>
+</html>

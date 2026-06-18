@@ -3,117 +3,151 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Experiments · Calico Central Firewall Lab</title>
+  <title>驗證看板 · Host Firewall Validation Lab</title>
   <link rel="stylesheet" href="./assets/site.css">
 </head>
 <body>
   <header class="topnav">
     <div class="topnav-inner">
-      <a class="brand" href="./index.html">Calico Central Firewall Lab</a>
+      <a class="brand" href="./index.html">Host Firewall Validation Lab</a>
       <nav class="topnav-links" aria-label="Primary">
-        <a href="./index.html">Overview</a>
-        <a href="./install.html">Install Guide</a>
-        <a href="./experiments.html" class="active">Experiments</a>
+        <a href="./index.html">總覽</a>
+        <a href="./experiments.html" class="active">驗證看板</a>
+        <a href="./install.html">安裝與支援</a>
       </nav>
-      <div class="topnav-actions">
-        <!-- GitHub link can be added here when the repo is public -->
-      </div>
     </div>
   </header>
 
   <main class="shell">
-      <div class="hero">
-        <span class="eyebrow">Experiment Board</span>
-        <h1>Host identity experiments in progress</h1>
-        <p>
-          The environment is ready. The first real experiment (zone-based host isolation) has landed and validated
-          that a single Calico control plane can drive policy across both standalone VMs and cluster-2 nodes treated
-          as external hosts. True workload identity across clusters is still ahead.
-        </p>
+    <div class="hero">
+      <span class="eyebrow">驗證看板</span>
+      <h1>驗證看板</h1>
+      <p>
+        這一頁把 repo 目前的驗證工作切成兩條可讀軌道：Calico 與 Cilium。
+        先看摘要、最新結果與限制，再決定要不要打開詳細頁或支援文件。
+      </p>
+    </div>
+
+    <section class="section">
+      <h2>閱讀方式</h2>
+      <div class="grid three">
+        <div class="card">
+          <span class="badge success">主要支援</span>
+          <p style="margin-top:0.55rem">對應 supported path，代表主要路線已跑通，結果與預期 matrix 一致。</p>
+        </div>
+        <div class="card">
+          <span class="badge warn">舊路徑</span>
+          <p style="margin-top:0.55rem">對應 deprecated path，代表功能存在，但屬於舊路徑或 lab-only 驗證，不應直接視為 forward-looking support。</p>
+        </div>
+        <div class="card">
+          <span class="badge neutral">產品限制</span>
+          <p style="margin-top:0.55rem">對應 limitation，代表不是 VM 起不來，而是目前沒有建立出可信的產品路徑或官方支援模型。</p>
+        </div>
       </div>
+    </section>
 
-      <section class="section">
-        <h2>Environment Ready</h2>
-        <div class="grid three">
-          <div class="card">
-            <span class="status ok">Ready</span>
-            <h3>Cluster-1</h3>
-            <p>k3s + Cilium + Calico policy-only is the single source of truth for HostEndpoints and policy.</p>
+    <section class="section">
+      <h2>目前驗證軌道</h2>
+      <div class="grid two track-grid">
+        <article class="track-card">
+          <span class="status ok">Calico</span>
+          <h3>HostEndpoint / Zone 隔離</h3>
+          <p>
+            這是目前最穩定、最容易重現的路線。重點在單一 Calico control plane
+            如何把 host-level policy 一致發送到 cluster-2 nodes 與 standalone VMs。
+          </p>
+          <div class="verdict-list">
+            <span class="badge success">Supported pass</span>
           </div>
-          <div class="card">
-            <span class="status ok">Ready</span>
-            <h3>Managed estates</h3>
-            <p>Three cluster-2 nodes + two standalone VMs are attached as external hosts.</p>
+          <div class="track-meta">
+            <div><strong>控制平面：</strong>cluster-1 Calico policy-only</div>
+            <div><strong>驗證範圍：</strong>在 TCP 18080 上驗證 zone1 / zone2 的 host 隔離</div>
+            <div><strong>詳細頁：</strong><a href="./experiments/zone-isolation.html">zone-isolation.html</a></div>
           </div>
-          <div class="card">
-            <span class="status warn">Pending</span>
-            <h3>Workload identity</h3>
-            <p>We are still at host identity / HostEndpoint level. Cross-cluster workload identity is not started.</p>
+        </article>
+
+        <article class="track-card">
+          <span class="status warn">Cilium</span>
+          <h3>Standalone Host 驗證</h3>
+          <p>
+            這是最新真實 round。它同時驗證 cluster nodes、Linux standalone VM
+            與 Windows standalone VM，但結果必須分開判讀，不可以混成一個總結論。
+          </p>
+          <div class="verdict-list">
+            <span class="badge warn">Supported fail</span>
+            <span class="badge warn">Deprecated path fail</span>
+            <span class="badge neutral">No official standalone Windows path found</span>
           </div>
+          <div class="track-meta">
+            <div><strong>控制平面：</strong>單一 k3s + Cilium cluster</div>
+            <div><strong>驗證範圍：</strong>cluster nodes、deprecated Linux external workload、Windows observation branch</div>
+            <div><strong>詳細頁：</strong><a href="./experiments/cilium-standalone-validation.html">cilium-standalone-validation.html</a></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>最新結果摘要</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>軌道</th>
+            <th>目前輪次</th>
+            <th>最新結果</th>
+            <th>判讀</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Calico</td>
+            <td>Zone1 / Zone2 host isolation</td>
+            <td><span class="badge success">Supported pass</span></td>
+            <td>單一 Calico control plane 已能把 zone-based host policy 下發到 external hosts。</td>
+          </tr>
+          <tr>
+            <td>Cilium / cluster nodes</td>
+            <td>2026-06-18 真實 round</td>
+            <td><span class="badge warn">Supported fail</span></td>
+            <td>zone1 allow 成功，但 cross-zone deny 在 pinned 1.17.6 host-policy 形狀下仍未成立。</td>
+          </tr>
+          <tr>
+            <td>Cilium / Linux VM</td>
+            <td>Deprecated external workload path</td>
+            <td><span class="badge warn">Deprecated path fail</span></td>
+            <td>attached identity 存在，但 VM 本地沒有真正載入 policy。</td>
+          </tr>
+          <tr>
+            <td>Cilium / Windows VM</td>
+            <td>Standalone observation branch</td>
+            <td><span class="badge neutral">No official standalone Windows path found</span></td>
+            <td>VM 與 IIS 正常，但沒有建立官方支援的 standalone Cilium-managed Windows attachment。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>下一步</h2>
+      <div class="grid two">
+        <div class="callout">
+          <strong>Calico 軌道</strong>
+          <p>維持現有 host zoning 基線，再往更多 profile、更多 port、更多 business grouping 擴展。</p>
         </div>
-      </section>
-
-      <section class="section">
-        <h2>Results</h2>
-        <div class="grid two">
-          <div class="card">
-            <span class="status ok">Completed</span>
-            <h3>Zone1 / Zone2 Host Isolation</h3>
-            <p>
-              <code>legacy-01</code> + cluster-2 nodes treated as <code>zone1</code> (allow domain).<br>
-              <code>legacy-02</code> treated as <code>zone2</code> (isolated).<br>
-              Verified on TCP 18080: intra-zone1 allow, cross-zone deny.
-            </p>
-            <a href="./experiments/zone-isolation.html">Open detailed results →</a>
-          </div>
-          <div class="card">
-            <span class="status warn">Planned</span>
-            <h3>Identity-Based Firewall</h3>
-            <p>
-              Next step: move from simple host zoning to richer selectors, multiple profiles,
-              and policy between different business domains.
-            </p>
-          </div>
+        <div class="callout limitation">
+          <strong>Cilium 軌道</strong>
+          <p>下一步不是補文案，而是換一個可被實證的 host-policy shape，再重新驗證 deny enforcement 與 Windows 獨立路徑限制分支。</p>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section class="section">
-        <h2>Roadmap / Status</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>Status</th>
-              <th>Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Centralized host policy rollout</td>
-              <td><span class="badge success">Done (round 1)</span></td>
-              <td>Zone-based host policy successfully pushed to both cluster-2 nodes and standalone VMs.</td>
-            </tr>
-            <tr>
-              <td>Host identity segmentation</td>
-              <td><span class="badge success">Done (round 1)</span></td>
-              <td>Used <code>zone</code> + <code>experiment</code> labels for the first host identity grouping.</td>
-            </tr>
-            <tr>
-              <td>Workload identity</td>
-              <td><span class="badge pending">Deferred</span></td>
-              <td>Focus remains on HostEndpoint / host identity for now. No cross-cluster workload identity work yet.</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section class="footer">
-        <p>
-          Environment and onboarding details: <a href="./install.html">Install Guide</a> ·
-          Architecture and inventory: <a href="./index.html">Overview</a>
-        </p>
-      </section>
-    </main>
+    <section class="footer">
+      <p>
+        想先了解 lab 架構與入口分類，回到 <a href="./index.html">總覽</a>。
+        想看環境佈建與 archive 文件，前往 <a href="./install.html">安裝與支援</a>。
+      </p>
+    </section>
+  </main>
 
   <script>
     (function() {
