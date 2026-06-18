@@ -1,0 +1,52 @@
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: cilium-linux-external-workload-http
+spec:
+  description: |
+    Deprecated external-workload example for the standalone Linux VM.
+    This is endpoint-style policy for a CiliumExternalWorkload identity, not
+    node host firewall on a Kubernetes node, so treat it as a lab-only analogue
+    rather than an equivalent primitive.
+  endpointSelector:
+    matchLabels:
+      lab.cilium.io/experiment: cilium-standalone
+      lab.cilium.io/host-kind: linux-external-workload
+      lab.cilium.io/zone: zone1
+  enableDefaultDeny:
+    ingress: false
+    egress: false
+  ingress:
+    - fromCIDRSet:
+        # Repo defaults assume two zone1 cluster nodes on the k3s subnet.
+        # The experiment runner rewrites this block when you pass different IPs.
+        # ZONE1_NODE_CIDRS_BEGIN
+        - cidr: 10.70.10.10/32
+        - cidr: 10.70.10.11/32
+        # ZONE1_NODE_CIDRS_END
+      toPorts:
+        - ports:
+            - port: "18080"
+              protocol: TCP
+  ingressDeny:
+    - fromCIDRSet:
+        # Repo defaults assume one zone2 cluster node on the same subnet.
+        # The experiment runner rewrites this block when you pass different IPs.
+        # ZONE2_NODE_CIDRS_BEGIN
+        - cidr: 10.70.10.12/32
+        # ZONE2_NODE_CIDRS_END
+      toPorts:
+        - ports:
+            - port: "18080"
+              protocol: TCP
+  egressDeny:
+    - toCIDRSet:
+        # Repo defaults assume one zone2 cluster node on the same subnet.
+        # The experiment runner rewrites this block when you pass different IPs.
+        # ZONE2_NODE_CIDRS_BEGIN
+        - cidr: 10.70.10.12/32
+        # ZONE2_NODE_CIDRS_END
+      toPorts:
+        - ports:
+            - port: "18080"
+              protocol: TCP

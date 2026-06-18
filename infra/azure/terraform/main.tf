@@ -12,9 +12,17 @@ locals {
   jumpbox_name               = "${var.name_prefix}-jumpbox"
   k3s_server_name            = "${var.name_prefix}-k3s-server-0"
   cluster2_server_name       = "${var.name_prefix}-k3s2-server-0"
+  cilium_linux_vm_name       = "${var.name_prefix}-cilium-linux"
+  cilium_windows_vm_name     = "${var.name_prefix}-cilium-windows"
+  cilium_windows_vm_hostname = substr(replace("${var.name_prefix}-cilium-win", "-", ""), 0, 15)
   jumpbox_private_ip         = cidrhost(var.management_subnet_cidr, 10)
   k3s_server_private_ip      = cidrhost(var.cluster_subnet_cidr, 10)
   cluster2_server_private_ip = cidrhost(var.cluster2_subnet_cidr, 10)
+  cilium_linux_vm_private_ip = cidrhost(var.legacy_subnet_cidr, 20 + var.legacy_vm_count)
+  cilium_windows_vm_private_ip = cidrhost(
+    var.legacy_subnet_cidr,
+    21 + var.legacy_vm_count,
+  )
 
   k3s_agent_private_ips = [
     for idx in range(var.k3s_agent_count) : cidrhost(var.cluster_subnet_cidr, 11 + idx)
@@ -42,6 +50,16 @@ locals {
     for idx, ip in local.cluster2_agent_private_ips :
     format("%s-k3s2-agent-%02d", var.name_prefix, idx + 1) => ip
   }
+
+  cilium_windows_bootstrap_script = templatefile("${path.module}/templates/cilium-windows-bootstrap.ps1.tftpl", {
+    ssh_public_key = local.ssh_public_key
+    vm_name        = local.cilium_windows_vm_name
+  })
+
+  cilium_windows_bootstrap_command = trimspace(<<-EOT
+    powershell -ExecutionPolicy Bypass -Command "$scriptPath = 'C:\Windows\Temp\cilium-windows-bootstrap.ps1'; $script = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${base64encode(local.cilium_windows_bootstrap_script)}')); [System.IO.File]::WriteAllText($scriptPath, $script, [System.Text.UTF8Encoding]::new($false)); & $scriptPath"
+  EOT
+  )
 }
 
 resource "random_password" "k3s_token" {
@@ -209,6 +227,36 @@ resource "azurerm_network_interface" "legacy" {
     subnet_id                     = azurerm_subnet.legacy.id
     private_ip_address_allocation = "Static"
     private_ip_address            = each.value
+  }
+}
+
+resource "azurerm_network_interface" "cilium_linux_vm" {
+  count               = var.cilium_linux_vm_enabled ? 1 : 0
+  name                = "${local.cilium_linux_vm_name}-nic"
+  location            = azurerm_resource_group.lab.location
+  resource_group_name = azurerm_resource_group.lab.name
+  tags                = merge(local.common_tags, { role = "cilium-linux-standalone" })
+
+  ip_configuration {
+    name                          = "primary"
+    subnet_id                     = azurerm_subnet.legacy.id
+    private_ip_address_allocation = "Static"
+    private_ip_address            = local.cilium_linux_vm_private_ip
+  }
+}
+
+resource "azurerm_network_interface" "cilium_windows_vm" {
+  count               = var.cilium_windows_vm_enabled ? 1 : 0
+  name                = "${local.cilium_windows_vm_name}-nic"
+  location            = azurerm_resource_group.lab.location
+  resource_group_name = azurerm_resource_group.lab.name
+  tags                = merge(local.common_tags, { role = "cilium-windows-standalone" })
+
+  ip_configuration {
+    name                          = "primary"
+    subnet_id                     = azurerm_subnet.legacy.id
+    private_ip_address_allocation = "Static"
+    private_ip_address            = local.cilium_windows_vm_private_ip
   }
 }
 
@@ -402,6 +450,92 @@ resource "azurerm_linux_virtual_machine" "legacy" {
   lifecycle {
     ignore_changes = [custom_data]
   }
+}
+
+resource "azurerm_linux_virtual_machine" "cilium_linux_vm" {
+  count               = var.cilium_linux_vm_enabled ? 1 : 0
+  name                = local.cilium_linux_vm_name
+  computer_name       = local.cilium_linux_vm_name
+  resource_group_name = azurerm_resource_group.lab.name
+  location            = azurerm_resource_group.lab.location
+  size                = var.cilium_linux_vm_size
+  admin_username      = var.admin_username
+  network_interface_ids = [
+    azurerm_network_interface.cilium_linux_vm[0].id,
+  ]
+  disable_password_authentication = true
+  custom_data = base64encode(templatefile("${path.module}/templates/cilium-linux-vm-cloud-init.tftpl", {
+    vm_name = local.cilium_linux_vm_name
+  }))
+  tags = merge(local.common_tags, { role = "cilium-linux-standalone" })
+
+  admin_ssh_key {
+    username   = var.admin_username
+    public_key = local.ssh_public_key
+  }
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "StandardSSD_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts-gen2"
+    version   = "latest"
+  }
+
+  lifecycle {
+    ignore_changes = [custom_data]
+  }
+}
+
+resource "azurerm_windows_virtual_machine" "cilium_windows_vm" {
+  count               = var.cilium_windows_vm_enabled ? 1 : 0
+  name                = local.cilium_windows_vm_name
+  computer_name       = local.cilium_windows_vm_hostname
+  resource_group_name = azurerm_resource_group.lab.name
+  location            = azurerm_resource_group.lab.location
+  size                = var.cilium_windows_vm_size
+  admin_username      = var.windows_admin_username
+  admin_password      = var.windows_admin_password
+  network_interface_ids = [
+    azurerm_network_interface.cilium_windows_vm[0].id,
+  ]
+  tags = merge(local.common_tags, { role = "cilium-windows-standalone" })
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "StandardSSD_LRS"
+  }
+
+  source_image_reference {
+    publisher = "MicrosoftWindowsServer"
+    offer     = "WindowsServer"
+    sku       = "2022-datacenter-g2"
+    version   = "latest"
+  }
+
+  lifecycle {
+    precondition {
+      condition     = length(var.windows_admin_password) > 0
+      error_message = "windows_admin_password must be set when cilium_windows_vm_enabled is true."
+    }
+  }
+}
+
+resource "azurerm_virtual_machine_extension" "cilium_windows_bootstrap" {
+  count                = var.cilium_windows_vm_enabled ? 1 : 0
+  name                 = "${local.cilium_windows_vm_name}-bootstrap"
+  virtual_machine_id   = azurerm_windows_virtual_machine.cilium_windows_vm[0].id
+  publisher            = "Microsoft.Compute"
+  type                 = "CustomScriptExtension"
+  type_handler_version = "1.10"
+
+  settings = jsonencode({
+    commandToExecute = local.cilium_windows_bootstrap_command
+  })
 }
 
 resource "azurerm_linux_virtual_machine" "cluster2_server" {

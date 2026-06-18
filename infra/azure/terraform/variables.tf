@@ -122,6 +122,43 @@ variable "legacy_vm_size" {
   default     = "Standard_B2s"
 }
 
+variable "cilium_linux_vm_enabled" {
+  description = "Whether to provision a dedicated Linux standalone VM for the Cilium validation flow."
+  type        = bool
+  default     = false
+}
+
+variable "cilium_linux_vm_size" {
+  description = "Azure VM size for the dedicated Linux standalone VM used by the Cilium validation flow."
+  type        = string
+  default     = "Standard_B2s"
+}
+
+variable "cilium_windows_vm_enabled" {
+  description = "Whether to provision a dedicated Windows standalone VM for the Cilium validation flow."
+  type        = bool
+  default     = false
+}
+
+variable "cilium_windows_vm_size" {
+  description = "Azure VM size for the dedicated Windows standalone VM used by the Cilium validation flow."
+  type        = string
+  default     = "Standard_B2s"
+}
+
+variable "windows_admin_username" {
+  description = "Admin username for the dedicated Windows standalone VM."
+  type        = string
+  default     = "azureuser"
+}
+
+variable "windows_admin_password" {
+  description = "Admin password for the dedicated Windows standalone VM. Required when cilium_windows_vm_enabled is true."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 variable "cluster2_enabled" {
   description = "Whether to provision the optional second k3s cluster."
   type        = bool

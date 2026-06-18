@@ -28,6 +28,14 @@ output "legacy_private_ips" {
   }
 }
 
+output "cilium_linux_vm_private_ip" {
+  value = try(azurerm_network_interface.cilium_linux_vm[0].ip_configuration[0].private_ip_address, null)
+}
+
+output "cilium_windows_vm_private_ip" {
+  value = try(azurerm_network_interface.cilium_windows_vm[0].ip_configuration[0].private_ip_address, null)
+}
+
 output "cluster2_server_private_ip" {
   value = try(azurerm_network_interface.cluster2_server[0].ip_configuration[0].private_ip_address, null)
 }
@@ -51,6 +59,18 @@ output "ssh_kubeapi_tunnel_command" {
   value = "ssh -N -L 6443:${azurerm_network_interface.k3s_server.ip_configuration[0].private_ip_address}:6443 ${var.admin_username}@${azurerm_public_ip.jumpbox.ip_address}"
 }
 
+output "ssh_cilium_linux_vm_via_jumpbox_command" {
+  value = try("ssh -J ${var.admin_username}@${azurerm_public_ip.jumpbox.ip_address} ${var.admin_username}@${azurerm_network_interface.cilium_linux_vm[0].ip_configuration[0].private_ip_address}", null)
+}
+
+output "ssh_cilium_windows_vm_via_jumpbox_command" {
+  value = try("ssh -J ${var.admin_username}@${azurerm_public_ip.jumpbox.ip_address} ${var.windows_admin_username}@${azurerm_network_interface.cilium_windows_vm[0].ip_configuration[0].private_ip_address}", null)
+}
+
+output "cilium_windows_http_tunnel_command" {
+  value = try("ssh -N -L 18080:${azurerm_network_interface.cilium_windows_vm[0].ip_configuration[0].private_ip_address}:18080 ${var.admin_username}@${azurerm_public_ip.jumpbox.ip_address}", null)
+}
+
 output "ssh_cluster2_server_via_jumpbox_command" {
   value = try("ssh -J ${var.admin_username}@${azurerm_public_ip.jumpbox.ip_address} ${var.admin_username}@${azurerm_network_interface.cluster2_server[0].ip_configuration[0].private_ip_address}", null)
 }
@@ -66,6 +86,8 @@ output "k3s_bootstrap_notes" {
   - /var/log/bootstrap-k3s-server.log
   - /var/log/bootstrap-k3s-agent.log
   - /var/log/bootstrap-legacy.log
+  - /var/log/bootstrap-cilium-linux.log (if the dedicated Cilium Linux VM is enabled)
+  - C:\WindowsAzure\Logs\Plugins\Microsoft.Compute.CustomScriptExtension\ (if the dedicated Cilium Windows VM is enabled)
   If cluster2 is enabled, use local port 26443 for its kube-api tunnel.
   EOT
 }

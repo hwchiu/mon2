@@ -1,0 +1,30 @@
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: cilium-zone2-deny-node-http
+spec:
+  description: |
+    Mirror the current zone-isolation deny case for cluster nodes only.
+    This file intentionally says nothing about the Windows standalone target:
+    Windows remains an explicit observation branch until a viable Cilium
+    attachment path exists in this repo.
+  nodeSelector:
+    matchLabels:
+      lab.cilium.io/experiment: cilium-standalone
+      lab.cilium.io/host-kind: cluster-node
+      lab.cilium.io/zone: zone2
+  enableDefaultDeny:
+    ingress: false
+    egress: false
+  ingressDeny:
+    - fromCIDRSet:
+        # Repo defaults assume two zone1 cluster nodes on the k3s subnet.
+        # The experiment runner rewrites this block when you pass different IPs.
+        # ZONE1_NODE_CIDRS_BEGIN
+        - cidr: 10.70.10.10/32
+        - cidr: 10.70.10.11/32
+        # ZONE1_NODE_CIDRS_END
+      toPorts:
+        - ports:
+            - port: "18080"
+              protocol: TCP

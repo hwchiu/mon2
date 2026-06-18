@@ -1,0 +1,40 @@
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: cilium-zone1-allow-node-http
+spec:
+  description: |
+    Narrow cluster-node host policy for the standalone validation.
+    Keep the blast radius on TCP 18080 only and do not flip selected nodes into
+    host-level default deny for unrelated traffic.
+  nodeSelector:
+    matchLabels:
+      lab.cilium.io/experiment: cilium-standalone
+      lab.cilium.io/host-kind: cluster-node
+      lab.cilium.io/zone: zone1
+  enableDefaultDeny:
+    ingress: false
+    egress: false
+  ingress:
+    - fromCIDRSet:
+        # Repo defaults assume two zone1 cluster nodes on the k3s subnet.
+        # The experiment runner rewrites this block when you pass different IPs.
+        # ZONE1_NODE_CIDRS_BEGIN
+        - cidr: 10.70.10.10/32
+        - cidr: 10.70.10.11/32
+        # ZONE1_NODE_CIDRS_END
+      toPorts:
+        - ports:
+            - port: "18080"
+              protocol: TCP
+  ingressDeny:
+    - fromCIDRSet:
+        # Repo defaults assume one zone2 cluster node on the same subnet.
+        # The experiment runner rewrites this block when you pass different IPs.
+        # ZONE2_NODE_CIDRS_BEGIN
+        - cidr: 10.70.10.12/32
+        # ZONE2_NODE_CIDRS_END
+      toPorts:
+        - ports:
+            - port: "18080"
+              protocol: TCP
