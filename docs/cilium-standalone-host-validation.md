@@ -100,6 +100,81 @@ Round 1 does not try to prove:
 - Changing away from the pinned older lab toolchain changes the experiment and
   invalidates comparison with prior deprecated-path results.
 
+## Live validation: 2026-06-18
+
+This document started as the round-1 plan. On 2026-06-18, the repo was also
+executed against a real Azure lab in `eastus2` with the pinned round-1 stack:
+
+- `k3s_version = v1.30.8+k3s1`
+- `cilium_version = 1.17.6`
+- `cilium_cli_version = v0.16.24`
+
+Provisioning succeeded. Terraform created the jumpbox, one k3s server, two k3s
+agents, one Linux standalone VM, and one Windows standalone VM. Baseline
+bootstrap evidence also succeeded:
+
+- jumpbox SSH worked
+- all three k3s nodes reported `Ready`
+- cluster-side `cilium status` was healthy after enabling host firewall on
+  `eth0`
+- the Linux standalone HTTP probe answered on TCP `18080`
+- the Windows standalone VM accepted SSH and IIS answered on TCP `18080`
+
+The live run still ended with mixed verdicts. The outcome table below is the
+real result, not the intended result:
+
+| Target | Real verdict on 2026-06-18 | Why |
+| --- | --- | --- |
+| Selected k3s nodes | `Supported fail` | the zone1 allow case passed, but both cross-zone deny cases still allowed traffic |
+| Linux standalone VM | `Deprecated path fail` | deprecated external-workload attachment eventually came up, but the attached agent never loaded the authored policy |
+| Windows standalone VM | `No official standalone Windows path found` | Windows bootstrap and IIS succeeded, but no standalone Cilium-managed Windows agent path was established in this lab shape |
+
+The exact executed matrix was:
+
+| Case | Source | Destination | Expected | Actual | Result |
+| --- | --- | --- | --- | --- | --- |
+| `node-zone1-allow` | `hep-lab-k3s-server-0` | `hep-lab-k3s-agent-01` | allow | allow | `PASS` |
+| `node-zone2-to-zone1-deny` | `hep-lab-k3s-agent-02` | `hep-lab-k3s-server-0` | deny | allow | `FAIL` |
+| `node-zone1-to-zone2-deny` | `hep-lab-k3s-server-0` | `hep-lab-k3s-agent-02` | deny | allow | `FAIL` |
+| `linux-zone1-allow` | `hep-lab-k3s-server-0` | `hep-lab-cilium-linux` | allow | allow | `PASS` |
+| `linux-zone2-to-linux-deny` | `hep-lab-k3s-agent-02` | `hep-lab-cilium-linux` | deny | allow | `FAIL` |
+| `linux-to-zone2-deny` | `hep-lab-cilium-linux` | `hep-lab-k3s-agent-02` | deny | allow | `FAIL` |
+| `windows-iis-observe` | `hep-lab-k3s-server-0` | `heplabciliumwin` | observe | allow | `OBSERVE` |
+
+Important live findings:
+
+1. Cluster-side host firewall did need explicit enablement. The working live
+   cluster required `hostFirewall.enabled=true`, `devices=eth0`, and a Cilium
+   daemonset restart before the agents reported `Host firewall: Enabled [eth0]`.
+2. The repo's current node-IP-based host-policy shape also required
+   `policy-cidr-match-mode=nodes` before peer node IPs appeared as `cidr:*`
+   identities instead of only `reserved:remote-node`.
+3. Even after that setting was enabled, the selected host endpoints still
+   showed only wildcard allow entries in `cilium-dbg bpf policy get`, and both
+   cross-zone deny probes still succeeded. On this pinned `1.17.6` round, the
+   current non-default-deny `fromCIDRSet` / `ingressDeny` host-policy shape is
+   therefore not validated.
+4. The Linux deprecated path required live remediation before it attached at
+   all: the cluster had to be moved off reserved `cluster.id = 0`, then
+   clustermesh had to be reset and re-enabled for external workloads.
+5. After attachment, the Linux VM still reported `Kubernetes: Disabled`,
+   `Host firewall: Disabled`, `policy get []`, and host-endpoint policy
+   revision `1`. That is why the Linux row is a deprecated-path fail instead of
+   a pass.
+6. The Windows row is not a lab-bootstrap failure. SSH to the VM worked and IIS
+   on TCP `18080` worked. The missing piece was a credible standalone
+   Cilium-managed Windows attachment path, not basic VM reachability.
+7. The repo's own Windows bootstrap template for this round only provisions
+   OpenSSH, IIS, and the TCP `18080` test surface. It does not install a
+   standalone Cilium agent on the Windows VM.
+
+Round-1 interpretation after the real run is straightforward:
+
+- keep the cluster-node row as `Supported fail` until a different host-policy
+  shape is empirically validated on the pinned Cilium line
+- keep the Linux row as `Deprecated path fail`
+- keep the Windows row explicit and limitation-based, not mixed with lab error
+
 ## Azure provisioning
 
 Provision the lab from `infra/azure/terraform` and keep the topology narrow.
