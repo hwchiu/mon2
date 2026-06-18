@@ -323,7 +323,7 @@ Create `scripts/onboard-cilium-linux-external-workload.sh` that:
 Core flow:
 
 ```bash
-cilium clustermesh enable --service-type LoadBalancer --enable-external-workloads
+cilium clustermesh enable --service-type NodePort --enable-external-workloads
 cilium clustermesh vm create "$WORKLOAD_NAME" -n default --ipv4-alloc-cidr "$ALLOC_CIDR"
 cilium clustermesh vm install "$WORKDIR/install-external-workload.sh"
 scp ... "$WORKDIR/install-external-workload.sh" "$REMOTE_TARGET:/tmp/"

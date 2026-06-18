@@ -52,7 +52,11 @@ write_files:
 
       timeout 900 bash -c 'until [ "$(kubectl get nodes --no-headers 2>/dev/null | wc -l)" -ge ${expected_node_count} ]; do sleep 10; done' || true
 
+%{ if cilium_cli_version != "" ~}
+      CILIUM_CLI_VERSION='${cilium_cli_version}'
+%{ else ~}
       CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
+%{ endif ~}
       CLI_ARCH=amd64
       if [ "$(uname -m)" = "aarch64" ]; then
         CLI_ARCH=arm64

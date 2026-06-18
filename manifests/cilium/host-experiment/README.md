@@ -16,6 +16,8 @@ making the Cilium split explicit:
    - `lab.cilium.io/experiment=cilium-standalone`
    - `lab.cilium.io/host-kind=cluster-node`
    - `lab.cilium.io/zone=zone1|zone2`
+   Use at least two distinct `zone1` node IPs and one `zone2` node so the
+   same-zone allow check is a real cross-host probe.
 3. If you want Linux standalone enforcement, run
    `scripts/onboard-cilium-linux-external-workload.sh` first. That script
    creates a `CiliumExternalWorkload` identity labeled as:
@@ -54,7 +56,12 @@ match the node IPs you pass in.
   onboarding path. A pass here is a lab result, not proof of parity with node
   host firewall.
 - The Linux onboarding helper expects an older `cilium` CLI that still exposes
-  `cilium clustermesh vm create/install/status`.
+  `cilium clustermesh vm create/install/status`. By default it resolves the
+  repo-pinned CLI release tag from `infra/azure/terraform/terraform.tfvars`
+  or `terraform.cilium-standalone.tfvars.example`.
+- The onboarding helper defaults `cilium clustermesh enable` to
+  `--service-type NodePort` because the lab disables the k3s packaged
+  `servicelb`.
 - Windows is intentionally not hidden behind a fallback Windows Firewall
   translation. If Windows cannot attach to Cilium meaningfully, the correct
   outcome is a documented unsupported result.

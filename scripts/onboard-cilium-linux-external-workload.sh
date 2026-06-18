@@ -15,7 +15,9 @@ Usage:
     [--workload-namespace default] \
     [--ipv4-alloc-cidr 10.192.1.0/30] \
     [--labels lab.cilium.io/experiment=cilium-standalone,lab.cilium.io/host-kind=linux-external-workload,lab.cilium.io/zone=zone1] \
-    [--service-type LoadBalancer] \
+    [--cilium-cli-version v0.16.24] \
+    [--cilium-bin /path/to/cilium] \
+    [--service-type NodePort] \
     [--vm-config key=value] \
     [--retries 4] \
     [--skip-clustermesh-enable]
@@ -34,6 +36,12 @@ Important limitations:
   - This is the deprecated external-workload path, not a supported replacement
     for Kubernetes node host firewall.
   - The target VM hostname must match the external workload name.
+  - Unless `--cilium-bin` is passed, the script downloads the repo-pinned older
+    `cilium` CLI release tag from `infra/azure/terraform/terraform.tfvars`
+    or falls back to `terraform.cilium-standalone.tfvars.example`.
+  - `--workload-namespace` is only passed during `vm create`. The
+    `CiliumExternalWorkload` object itself is cluster-scoped, so later status
+    lookups key off the workload name.
   - The script expects an older Cilium CLI that still exposes
     `cilium clustermesh vm create/install/status`.
 EOF
@@ -78,11 +86,85 @@ run_kubectl() {
 }
 
 run_cilium() {
-  local cmd=(cilium --namespace "$CILIUM_NAMESPACE")
+  local cmd=("$CILIUM_BIN" --namespace "$CILIUM_NAMESPACE")
   if [[ -n "$KUBE_CONTEXT" ]]; then
     cmd+=(--context "$KUBE_CONTEXT")
   fi
   KUBECONFIG="$KUBECONFIG" "${cmd[@]}" "$@"
+}
+
+resolve_cilium_cli_version() {
+  local candidate
+  local resolved
+
+  for candidate in \
+    "${REPO_ROOT}/infra/azure/terraform/terraform.tfvars" \
+    "${REPO_ROOT}/infra/azure/terraform/terraform.cilium-standalone.tfvars.example"
+  do
+    [[ -f "$candidate" ]] || continue
+    resolved="$(sed -nE 's/^cilium_cli_version[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' "$candidate" | head -n 1)"
+    if [[ -n "$resolved" ]]; then
+      CILIUM_CLI_VERSION="$resolved"
+      CILIUM_CLI_VERSION_SOURCE="$candidate"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+prepare_cilium_cli() {
+  local cli_arch
+  local archive
+  local checksum
+
+  if [[ -n "$CILIUM_BIN" ]]; then
+    [[ -x "$CILIUM_BIN" ]] || die "cilium binary is not executable: $CILIUM_BIN"
+    log "Using caller-supplied cilium binary: $CILIUM_BIN"
+    return 0
+  fi
+
+  if [[ -z "$CILIUM_CLI_VERSION" ]]; then
+    resolve_cilium_cli_version || true
+  fi
+
+  if [[ -z "$CILIUM_CLI_VERSION" ]]; then
+    die "unable to resolve a pinned cilium CLI version from infra/azure/terraform/terraform.tfvars or terraform.cilium-standalone.tfvars.example; pass --cilium-cli-version or --cilium-bin explicitly"
+  fi
+
+  need_cmd curl
+  need_cmd tar
+  need_cmd sha256sum
+
+  case "$(uname -m)" in
+    x86_64|amd64)
+      cli_arch="amd64"
+      ;;
+    aarch64|arm64)
+      cli_arch="arm64"
+      ;;
+    *)
+      die "unsupported local architecture for cilium CLI download: $(uname -m)"
+      ;;
+  esac
+
+  archive="${WORKDIR}/cilium-linux-${cli_arch}.tar.gz"
+  checksum="${archive}.sha256sum"
+
+  if [[ -n "$CILIUM_CLI_VERSION_SOURCE" ]]; then
+    log "Downloading pinned cilium CLI ${CILIUM_CLI_VERSION} from ${CILIUM_CLI_VERSION_SOURCE}"
+  else
+    log "Downloading pinned cilium CLI ${CILIUM_CLI_VERSION}"
+  fi
+
+  curl -fsSL --output "$archive" "https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-${cli_arch}.tar.gz"
+  curl -fsSL --output "$checksum" "https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-${cli_arch}.tar.gz.sha256sum"
+  (
+    cd "$WORKDIR"
+    sha256sum --check "$(basename "$checksum")"
+  )
+  tar -xzf "$archive" -C "$WORKDIR" cilium
+  CILIUM_BIN="${WORKDIR}/cilium"
 }
 
 render_vm_config_args() {
@@ -107,6 +189,9 @@ render_label_args() {
 KUBECONFIG=""
 KUBE_CONTEXT=""
 CILIUM_NAMESPACE="kube-system"
+CILIUM_BIN="${CILIUM_BIN:-}"
+CILIUM_CLI_VERSION="${CILIUM_CLI_VERSION:-}"
+CILIUM_CLI_VERSION_SOURCE=""
 JUMPBOX=""
 SSH_USER="azureuser"
 LINUX_TARGET=""
@@ -116,7 +201,7 @@ WORKLOAD_NAME=""
 WORKLOAD_NAMESPACE="default"
 IPV4_ALLOC_CIDR="10.192.1.0/30"
 WORKLOAD_LABELS="lab.cilium.io/experiment=cilium-standalone,lab.cilium.io/host-kind=linux-external-workload,lab.cilium.io/zone=zone1"
-SERVICE_TYPE="LoadBalancer"
+SERVICE_TYPE="NodePort"
 SKIP_CLUSTERMESH_ENABLE=0
 RETRIES=4
 declare -a VM_CONFIGS=()
@@ -163,6 +248,15 @@ while [[ $# -gt 0 ]]; do
       WORKLOAD_LABELS="$2"
       shift 2
       ;;
+    --cilium-cli-version)
+      CILIUM_CLI_VERSION="$2"
+      CILIUM_CLI_VERSION_SOURCE="--cilium-cli-version"
+      shift 2
+      ;;
+    --cilium-bin)
+      CILIUM_BIN="$2"
+      shift 2
+      ;;
     --service-type)
       SERVICE_TYPE="$2"
       shift 2
@@ -195,7 +289,6 @@ if [[ -z "$KUBECONFIG" || -z "$JUMPBOX" || -z "$LINUX_TARGET" ]]; then
 fi
 
 need_cmd kubectl
-need_cmd cilium
 need_cmd ssh
 need_cmd scp
 need_cmd mktemp
@@ -210,15 +303,17 @@ if [[ -z "$WORKLOAD_NAME" ]]; then
   WORKLOAD_NAME="$LINUX_NAME"
 fi
 
-if ! run_cilium clustermesh vm --help >/dev/null 2>&1; then
-  die "the installed cilium CLI does not expose 'cilium clustermesh vm'; use an older CLI line for the deprecated external-workload flow"
-fi
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 WORKDIR="$(mktemp -d)"
 INSTALL_SCRIPT="${WORKDIR}/install-external-workload.sh"
 trap 'rm -rf "$WORKDIR"' EXIT
+
+prepare_cilium_cli
+
+if ! run_cilium clustermesh vm --help >/dev/null 2>&1; then
+  die "the resolved cilium CLI does not expose 'cilium clustermesh vm'; use an older CLI line for the deprecated external-workload flow"
+fi
 
 SSH_OPTS=(
   -o StrictHostKeyChecking=no
@@ -249,13 +344,13 @@ log "Waiting for clustermesh status"
 run_cilium clustermesh status --wait
 
 if run_kubectl get ciliumexternalworkload "$WORKLOAD_NAME" >/dev/null 2>&1; then
-  log "Reusing existing CiliumExternalWorkload ${WORKLOAD_NAME}"
+  log "Reusing existing CiliumExternalWorkload ${WORKLOAD_NAME}; identity namespace is fixed at create time and later reads are cluster-scoped"
   mapfile -d '' -t LABEL_ARGS < <(render_label_args "$WORKLOAD_LABELS")
   if [[ "${#LABEL_ARGS[@]}" -gt 0 ]]; then
     run_kubectl label ciliumexternalworkload "$WORKLOAD_NAME" --overwrite "${LABEL_ARGS[@]}"
   fi
 else
-  log "Creating CiliumExternalWorkload ${WORKLOAD_NAME}"
+  log "Creating CiliumExternalWorkload ${WORKLOAD_NAME} with identity namespace ${WORKLOAD_NAMESPACE}"
   CREATE_CMD=(
     clustermesh vm create "$WORKLOAD_NAME"
     -n "$WORKLOAD_NAMESPACE"

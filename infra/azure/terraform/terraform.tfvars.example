@@ -15,7 +15,10 @@ cluster2_enabled    = false
 cluster2_agent_count = 2
 
 k3s_version    = ""
+# For the deprecated standalone Cilium round, start from
+# terraform.cilium-standalone.tfvars.example instead of this generic example.
 cilium_version = "1.19.4"
+cilium_cli_version = ""
 
 cluster_cidr = "10.42.0.0/16"
 service_cidr = "10.43.0.0/16"

@@ -29,6 +29,8 @@ Important limitations:
     external-workload attachment is healthy.
   - Windows is probed as an explicit target, but the result is observational
     unless a real Cilium standalone attachment path exists.
+  - Pass at least two distinct `--zone1-node` private IPs so the zone1 allow
+    case is a real cross-host probe instead of a self-probe.
 EOF
 }
 
@@ -60,6 +62,20 @@ append_target() {
 
   eval "$__names_var+=(\"\$name\")"
   eval "$__ips_var+=(\"\$ip\")"
+}
+
+select_distinct_zone1_peer() {
+  local idx
+  for idx in "${!ZONE1_NODE_IPS[@]}"; do
+    [[ "$idx" -eq 0 ]] && continue
+    if [[ "${ZONE1_NODE_IPS[$idx]}" != "$FIRST_ZONE1_IP" ]]; then
+      SECOND_ZONE1_NAME="${ZONE1_NODE_NAMES[$idx]}"
+      SECOND_ZONE1_IP="${ZONE1_NODE_IPS[$idx]}"
+      return 0
+    fi
+  done
+
+  return 1
 }
 
 run_kubectl() {
@@ -294,8 +310,8 @@ if [[ -z "$KUBECONFIG" || -z "$JUMPBOX" || -z "$LINUX_NAME" || -z "$WINDOWS_NAME
   exit 1
 fi
 
-if [[ "${#ZONE1_NODE_NAMES[@]}" -eq 0 || "${#ZONE2_NODE_NAMES[@]}" -eq 0 ]]; then
-  die "provide at least one --zone1-node and one --zone2-node"
+if [[ "${#ZONE1_NODE_NAMES[@]}" -lt 2 || "${#ZONE2_NODE_NAMES[@]}" -eq 0 ]]; then
+  die "provide at least two --zone1-node values and one --zone2-node value"
 fi
 
 if [[ -z "$LINUX_WORKLOAD_NAME" ]]; then
@@ -420,12 +436,11 @@ FIRST_ZONE1_NAME="${ZONE1_NODE_NAMES[0]}"
 FIRST_ZONE1_IP="${ZONE1_NODE_IPS[0]}"
 FIRST_ZONE2_NAME="${ZONE2_NODE_NAMES[0]}"
 FIRST_ZONE2_IP="${ZONE2_NODE_IPS[0]}"
+SECOND_ZONE1_NAME=""
+SECOND_ZONE1_IP=""
 
-SECOND_ZONE1_NAME="$FIRST_ZONE1_NAME"
-SECOND_ZONE1_IP="$FIRST_ZONE1_IP"
-if [[ "${#ZONE1_NODE_NAMES[@]}" -gt 1 ]]; then
-  SECOND_ZONE1_NAME="${ZONE1_NODE_NAMES[1]}"
-  SECOND_ZONE1_IP="${ZONE1_NODE_IPS[1]}"
+if ! select_distinct_zone1_peer; then
+  die "provide at least two distinct --zone1-node private IPs so the zone1 allow case is not a self-probe"
 fi
 
 log "Running reachability matrix on TCP ${PORT}"

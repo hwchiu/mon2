@@ -26,6 +26,8 @@ does not have one clean, uniform standalone-host primitive in Cilium:
   kube-apiserver, and other non-test host traffic.
 - The runner rewrites the example CIDR blocks in the host experiment manifests
   so the applied policy matches the node IPs you pass at execution time.
+- The runner expects two distinct `zone1` node IPs and one `zone2` node so the
+  allow case is measured between distinct cluster hosts.
 
 ## Assets
 
@@ -37,6 +39,7 @@ does not have one clean, uniform standalone-host primitive in Cilium:
   external-workload policy, written as endpoint policy rather than node host
   policy
 - `scripts/onboard-cilium-linux-external-workload.sh`: helper for the older
-  `cilium clustermesh vm ...` onboarding path
+  `cilium clustermesh vm ...` onboarding path; by default it resolves the
+  pinned old `cilium` CLI release tag from the repo's Terraform vars
 - `scripts/run-cilium-standalone-experiment.sh`: installs the dedicated Linux
   test service, applies the manifests, and prints the reachability matrix

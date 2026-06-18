@@ -201,6 +201,12 @@ variable "cilium_version" {
   default     = "1.19.4"
 }
 
+variable "cilium_cli_version" {
+  description = "Optional pinned cilium-cli release tag such as v0.16.24. Leave empty to download the current stable cilium-cli release."
+  type        = string
+  default     = ""
+}
+
 variable "cluster_cidr" {
   description = "Pod CIDR passed to k3s and Cilium."
   type        = string

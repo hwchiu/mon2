@@ -26,6 +26,7 @@ Default lab behavior is unchanged unless you explicitly enable the new Cilium st
 - `terraform/main.tf`: Azure network, NIC, VM, and bootstrap definitions
 - `terraform/outputs.tf`: IPs and helper commands
 - `terraform/terraform.tfvars.example`: example input values
+- `terraform/terraform.cilium-standalone.tfvars.example`: pinned example for the deprecated Cilium standalone-host validation flow
 - `terraform/templates/*.tftpl`: cloud-init templates for the jumpbox, k3s nodes, legacy VMs, and the optional Cilium standalone VMs
 - `../../scripts/onboard-external-k8s-hosts.sh`: post-provision onboarding for cluster-2 nodes as Calico-managed external hosts
 
@@ -38,12 +39,28 @@ Default lab behavior is unchanged unless you explicitly enable the new Cilium st
 cd infra/azure/terraform
 ```
 
-3. Copy the example vars file and update it. Use an absolute path for `ssh_public_key_path` because Terraform's `file()` function does not expand `~`.
+3. Copy the example vars file that matches the validation track and update it. Use an absolute path for `ssh_public_key_path` because Terraform's `file()` function does not expand `~`.
 
 ```bash
 cp terraform.tfvars.example terraform.tfvars
 $EDITOR terraform.tfvars
 ```
+
+For the standalone Cilium validation round described in
+`docs/cilium-standalone-host-validation.md`, start from the pinned example
+instead:
+
+```bash
+cp terraform.cilium-standalone.tfvars.example terraform.tfvars
+$EDITOR terraform.tfvars
+```
+
+That dedicated example:
+
+- pins `k3s_version`, `cilium_version`, and `cilium_cli_version` to the older combination required by the deprecated Linux external-workload flow
+- enables the dedicated Linux and Windows standalone VMs
+- sets `legacy_vm_count = 0` so the lab shape matches the round-1 document more closely
+- gives `scripts/onboard-cilium-linux-external-workload.sh` a repo-local `cilium_cli_version` source so the deprecated Linux onboarding helper can download the pinned old CLI by default
 
 4. Provision the lab:
 
@@ -96,6 +113,7 @@ Relevant variables:
 - `cilium_linux_vm_size`: overrides the Linux VM size
 - `cilium_windows_vm_enabled`: creates the dedicated Windows standalone VM on the legacy subnet
 - `cilium_windows_vm_size`: overrides the Windows VM size
+- `cilium_cli_version`: optionally pins the `cilium` CLI release tag downloaded during k3s server bootstrap
 - `windows_admin_username`: admin username for the Windows VM
 - `windows_admin_password`: required when the Windows VM is enabled and must satisfy Azure Windows password requirements
 
@@ -104,6 +122,7 @@ The Windows bootstrap reuses the public key loaded from `ssh_public_key_path` an
 ## Bootstrap behavior
 
 - The k3s server writes `/home/<admin_username>/.kube/config` for convenience.
+- When `cilium_cli_version` is set, the k3s server downloads that exact `cilium` CLI release tag instead of the current stable CLI.
 - Bootstrap logs are written to `/var/log/bootstrap-k3s-server.log`, `/var/log/bootstrap-k3s-agent.log`, `/var/log/bootstrap-legacy.log`, and `/var/log/bootstrap-cilium-linux.log` when the dedicated Linux standalone VM is enabled.
 - The Windows bootstrap is logged by the Azure Custom Script Extension under `C:\WindowsAzure\Logs\Plugins\Microsoft.Compute.CustomScriptExtension\`.
 - The configuration intentionally does not install Calico. That remains manual because the Calico-on-Cilium combination is the subject under test.

@@ -339,6 +339,7 @@ resource "azurerm_linux_virtual_machine" "k3s_server" {
   disable_password_authentication = true
   custom_data = base64encode(templatefile("${path.module}/templates/k3s-server-cloud-init.tftpl", {
     admin_username      = var.admin_username
+    cilium_cli_version  = var.cilium_cli_version
     cilium_version      = var.cilium_version
     cluster_cidr        = var.cluster_cidr
     expected_node_count = var.k3s_agent_count + 1
@@ -552,6 +553,7 @@ resource "azurerm_linux_virtual_machine" "cluster2_server" {
   disable_password_authentication = true
   custom_data = base64encode(templatefile("${path.module}/templates/k3s-server-cloud-init.tftpl", {
     admin_username      = var.admin_username
+    cilium_cli_version  = var.cilium_cli_version
     cilium_version      = var.cilium_version
     cluster_cidr        = var.cluster2_cluster_cidr
     expected_node_count = var.cluster2_agent_count + 1

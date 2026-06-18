@@ -108,9 +108,23 @@ Provision the lab from `infra/azure/terraform` and keep the topology narrow.
 
    ```bash
    cd infra/azure/terraform
-   cp terraform.tfvars.example terraform.tfvars
+   cp terraform.cilium-standalone.tfvars.example terraform.tfvars
    $EDITOR terraform.tfvars
    ```
+
+   This dedicated example intentionally pins the round to:
+
+   - `k3s_version = v1.30.8+k3s1`
+   - `cilium_version = 1.17.6`
+   - `cilium_cli_version = v0.16.24`
+
+   That older combination keeps the deprecated Linux external-workload path
+   available. It also enables the dedicated Linux and Windows standalone VMs
+   and sets `legacy_vm_count = 0` so the lab matches the round-1 topology.
+   The deprecated Linux onboarding helper also reads `cilium_cli_version` from
+   `infra/azure/terraform/terraform.tfvars` first, then falls back to
+   `terraform.cilium-standalone.tfvars.example`, so the round does not depend
+   on a separately managed local `cilium` binary by default.
 
 2. Ensure the plan includes:
 
@@ -168,8 +182,12 @@ The cluster remains the single source of truth for authored Cilium policy.
 
 3. Choose a narrow first selector:
 
-   - one node labeled `lab.cilium.io/zone=zone1`
+   - two distinct nodes labeled `lab.cilium.io/zone=zone1`
    - one node labeled `lab.cilium.io/zone=zone2`
+
+   Using two distinct `zone1` node IPs keeps the allow case honest. The first
+   pass should measure one host reaching a different host in the same zone, not
+   a self probe against the same machine.
 
 4. Enable the minimum Cilium host policy needed for those nodes. In this
    document, that is the cluster node host-firewall path. Do not replace the
@@ -207,11 +225,15 @@ Recommended round-1 flow:
 
 1. Select and record the pinned older Cilium lab toolchain that still supports
    external workloads.
+   The repo helper reads `cilium_cli_version` from
+   `infra/azure/terraform/terraform.tfvars` first, then falls back to
+   `terraform.cilium-standalone.tfvars.example`, unless you override it with
+   `--cilium-cli-version` or `--cilium-bin`.
 2. Using that pinned lab CLI, enable the needed cluster-side support. Example
    only, from the pinned toolchain:
 
    ```bash
-   cilium clustermesh enable --service-type LoadBalancer --enable-external-workloads
+   cilium clustermesh enable --service-type NodePort --enable-external-workloads
    ```
 
 3. Using that same pinned lab toolchain, create the external-workload
@@ -222,6 +244,10 @@ Recommended round-1 flow:
    cilium clustermesh vm create <linux-workload-name> -n default --ipv4-alloc-cidr <cidr>
    cilium clustermesh vm install ./install-external-workload.sh
    ```
+
+   In this flow, `-n default` is part of the external-workload identity
+   creation. The `CiliumExternalWorkload` object itself is cluster-scoped, so
+   later status checks still key off the workload name.
 
 4. Copy the generated installer to the Linux VM through the jumpbox and run it
    with the host IP exported if the installer requires it.
