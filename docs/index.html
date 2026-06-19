@@ -62,9 +62,9 @@
           <div class="sub">Cluster nodes / Linux VM / Windows VM</div>
         </div>
         <div class="stat">
-          <div class="value">2026-06-18</div>
+          <div class="value">2026-06-19</div>
           <div class="label">最新實測輪次</div>
-          <div class="sub">Cilium standalone validation</div>
+          <div class="sub">Cilium pure-k8s revalidation</div>
         </div>
         <div class="stat">
           <div class="value">18080/TCP</div>
@@ -103,14 +103,14 @@
             同時覆蓋 cluster nodes、Linux standalone VM 與 Windows VM。
           </p>
           <div class="verdict-list">
-            <span class="badge warn">Supported fail</span>
+            <span class="badge success">Supported pass</span>
             <span class="badge warn">Deprecated path fail</span>
             <span class="badge neutral">No official standalone Windows path found</span>
           </div>
           <div class="track-meta">
             <div><strong>控制平面：</strong>單一 k3s + Cilium cluster</div>
             <div><strong>涵蓋範圍：</strong>cluster nodes、Linux deprecated path、Windows observation branch</div>
-            <div><strong>最新 round：</strong>真實部署已完成，但 deny enforcement 與 Windows standalone path 未被驗證成功</div>
+            <div><strong>最新 round：</strong>純 k8s deny enforcement 已重驗證通過；Linux deprecated path 與 Windows standalone path 仍未通過</div>
           </div>
           <p style="margin-top:0.9rem"><a href="./experiments/cilium-standalone-validation.html">查看 Cilium 詳細結果 →</a></p>
         </article>
@@ -155,7 +155,7 @@
         </div>
         <div class="card">
           <h3>Cilium 原始記錄導讀</h3>
-          <p>若你要追 2026-06-18 真實輪次的長篇背景，先從導讀頁進入，再決定要不要看原始 Markdown。</p>
+          <p>若你要追 2026-06-18 初次 live round 與 2026-06-19 重驗證的長篇背景，先從導讀頁進入，再決定要不要看原始 Markdown。</p>
           <a href="./references/cilium-live-record.html">閱讀導讀頁 →</a>
         </div>
       </div>

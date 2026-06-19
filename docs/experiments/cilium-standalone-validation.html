@@ -24,11 +24,12 @@
       <span class="eyebrow">Cilium 軌道</span>
       <h1>Cilium Standalone Host 驗證</h1>
       <p>
-        這一頁只整理 2026-06-18 真實部署 round 的關鍵結果。重點不是把三個 target 混成一個 headline，
-        而是分開呈現 Kubernetes nodes、Linux standalone VM、Windows standalone VM 的實際 verdict。
+        這一頁整理 2026-06-18 初次 live round 與 2026-06-19 重驗證後的關鍵結果。
+        重點不是把三個 target 混成一個 headline，而是分開呈現 Kubernetes nodes、
+        Linux standalone VM、Windows standalone VM 的實際 verdict。
       </p>
       <div class="verdict-list">
-        <span class="badge warn">Supported fail</span>
+        <span class="badge success">Supported pass</span>
         <span class="badge warn">Deprecated path fail</span>
         <span class="badge neutral">No official standalone Windows path found</span>
       </div>
@@ -38,9 +39,9 @@
       <h2>快速結論</h2>
       <div class="grid three">
         <article class="card">
-          <span class="badge warn">Supported fail</span>
+          <span class="badge success">Supported pass</span>
           <h3>Kubernetes 節點</h3>
-          <p>cluster-side host firewall 有成功啟用，但 zone1 / zone2 cross-zone deny 仍放行。</p>
+          <p>純 k8s host-policy 路徑已通過；same-zone allow 與兩個 cross-zone deny 都在 2026-06-19 重驗證成立。</p>
         </article>
         <article class="card">
           <span class="badge warn">Deprecated path fail</span>
@@ -64,19 +65,24 @@
           <div class="sub">單一 k3s + Cilium cluster</div>
         </div>
         <div class="stat">
+          <div class="value">2026-06-19</div>
+          <div class="label">最新重驗證</div>
+          <div class="sub">純 k8s host policy</div>
+        </div>
+        <div class="stat">
           <div class="value">1.17.6</div>
           <div class="label">Cilium 版本</div>
           <div class="sub">pinned live round</div>
         </div>
         <div class="stat">
-          <div class="value">v0.16.24</div>
-          <div class="label">Cilium CLI</div>
-          <div class="sub">needed for deprecated vm workflow</div>
-        </div>
-        <div class="stat">
           <div class="value">18080/TCP</div>
           <div class="label">測試面</div>
           <div class="sub">dedicated HTTP probe only</div>
+        </div>
+        <div class="stat">
+          <div class="value">v0.16.24</div>
+          <div class="label">Cilium CLI</div>
+          <div class="sub">needed for deprecated vm workflow</div>
         </div>
       </div>
       <div class="grid two" style="margin-top:0.9rem">
@@ -118,16 +124,16 @@
             <td><code>hep-lab-k3s-agent-02</code></td>
             <td><code>hep-lab-k3s-server-0</code></td>
             <td>deny</td>
-            <td>allow</td>
-            <td><span class="badge danger">FAIL</span></td>
+            <td>deny</td>
+            <td><span class="badge success">PASS</span></td>
           </tr>
           <tr>
             <td><code>node-zone1-to-zone2-deny</code></td>
             <td><code>hep-lab-k3s-server-0</code></td>
             <td><code>hep-lab-k3s-agent-02</code></td>
             <td>deny</td>
-            <td>allow</td>
-            <td><span class="badge danger">FAIL</span></td>
+            <td>deny</td>
+            <td><span class="badge success">PASS</span></td>
           </tr>
           <tr>
             <td><code>linux-zone1-allow</code></td>
@@ -156,7 +162,7 @@
           <tr>
             <td><code>windows-iis-observe</code></td>
             <td><code>hep-lab-k3s-server-0</code></td>
-            <td><code>heplabciliumwin</code></td>
+            <td><code>hep-lab-cilium-windows</code></td>
             <td>observe</td>
             <td>allow</td>
             <td><span class="badge neutral">OBSERVE</span></td>
@@ -171,8 +177,9 @@
         <article class="callout fail">
           <strong>Cluster node 路徑</strong>
           <p>
-            host firewall 最終有被啟用，`policy-cidr-match-mode=nodes` 也有補上，但在 pinned 1.17.6
-            的這個 host-policy 形狀下，cross-zone deny 仍沒有成為可觀察到的有效封鎖。
+            pinned 1.17.6 live lab 在 2026-06-19 已證實純 k8s path 可成立。host firewall
+            啟用後，server 端與 zone2 端的 host endpoint BPF policy map 都出現了具體 deny entries，
+            cross-zone deny 也和 curl matrix 一致。
           </p>
         </article>
         <article class="callout fail">
@@ -200,7 +207,8 @@
           <ul>
             <li>必須額外啟用 <code>hostFirewall.enabled=true</code> 與 <code>devices=eth0</code>。</li>
             <li>必須補上 <code>policy-cidr-match-mode=nodes</code> 才能讓 peer node IP 出現 <code>cidr:*</code> identity。</li>
-            <li>即使如此，host endpoint 的 BPF policy map 仍未呈現預期 deny entries。</li>
+            <li>2026-06-19 重驗證時，server 端 BPF map 已出現對 <code>10.70.10.12/32</code> 的 deny，zone2 端也已對 <code>10.70.10.10/32</code> 與 <code>10.70.10.11/32</code> 寫入 deny。</li>
+            <li>即使純 k8s path 已通過，live <code>cilium-config</code> 仍維持 <code>enable-node-selector-labels=false</code>；這次通過的是目前 repo 的 node-IP-based host-policy 形狀。</li>
           </ul>
         </div>
         <div class="card">
@@ -219,7 +227,7 @@
       <div class="grid two">
         <div class="card">
           <h3>Cilium 原始記錄導讀</h3>
-          <p>先看導讀頁，再決定要不要打開原始 Markdown，避免直接離開 portal chrome。</p>
+          <p>先看導讀頁，再決定要不要打開原始 Markdown；原始記錄保留 2026-06-18 初次判讀，主 verdict 以這頁的 2026-06-19 重驗證為準。</p>
           <a href="../references/cilium-live-record.html">閱讀導讀頁 →</a>
         </div>
         <div class="card">

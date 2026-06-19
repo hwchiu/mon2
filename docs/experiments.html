@@ -75,7 +75,7 @@
             與 Windows standalone VM，但結果必須分開判讀，不可以混成一個總結論。
           </p>
           <div class="verdict-list">
-            <span class="badge warn">Supported fail</span>
+            <span class="badge success">Supported pass</span>
             <span class="badge warn">Deprecated path fail</span>
             <span class="badge neutral">No official standalone Windows path found</span>
           </div>
@@ -108,9 +108,9 @@
           </tr>
           <tr>
             <td>Cilium / cluster nodes</td>
-            <td>2026-06-18 真實 round</td>
-            <td><span class="badge warn">Supported fail</span></td>
-            <td>zone1 allow 成功，但 cross-zone deny 在 pinned 1.17.6 host-policy 形狀下仍未成立。</td>
+            <td>2026-06-19 重驗證</td>
+            <td><span class="badge success">Supported pass</span></td>
+            <td>純 k8s node host-policy 已通過；zone1 allow 與兩個 cross-zone deny 都成立。</td>
           </tr>
           <tr>
             <td>Cilium / Linux VM</td>
@@ -137,7 +137,7 @@
         </div>
         <div class="callout limitation">
           <strong>Cilium 軌道</strong>
-          <p>下一步不是補文案，而是換一個可被實證的 host-policy shape，再重新驗證 deny enforcement 與 Windows 獨立路徑限制分支。</p>
+          <p>純 k8s 基線已通過；下一步是把 Linux deprecated path 的失敗原因與 Windows standalone limitation 繼續分開驗證，不把兩者混成 cluster-side 結論。</p>
         </div>
       </div>
     </section>
