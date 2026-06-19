@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Archive: k3s + Cilium + Calico HostEndpoint · Host Firewall Validation Lab</title>
+  <title>封存：k3s + Cilium + Calico HostEndpoint · Host Firewall Validation Lab</title>
   <link rel="stylesheet" href="../assets/site.css">
 </head>
 <body>
@@ -14,15 +14,16 @@
         <a href="../index.html">總覽</a>
         <a href="../experiments.html">驗證看板</a>
         <a href="../install.html">安裝與支援</a>
+        <a href="../library.html" class="active">文件庫</a>
       </nav>
     </div>
   </header>
 
   <div class="page">
     <aside class="sidebar">
-      <div class="sidebar-title">Archives</div>
+      <div class="sidebar-title">封存文件</div>
       <nav>
-        <a href="../experiments.html">← 返回驗證看板</a>
+        <a href="../library.html#archives">← 返回文件庫</a>
         <a href="k3s-cilium-hostendpoint.html" class="active">k3s + Cilium + Calico</a>
         <a href="standalone-vm-hostendpoint.html">Standalone VM + Felix</a>
       </nav>
@@ -30,12 +31,12 @@
 
     <main class="main">
       <div class="hero">
-        <span class="eyebrow">Archive • Setup Validation</span>
-        <h1>Experiment A: k3s + Cilium + Calico HostEndpoint</h1>
+        <span class="eyebrow">封存頁 · 建置驗證</span>
+        <h1>實驗 A：k3s + Cilium + Calico HostEndpoint</h1>
         <p>
-          This page is a setup validation archive, not a formal identity-based firewall result.
-          It records the earliest compatibility check: whether Calico can be reduced to only HostEndpoint + host firewall
-          while k3s keeps Cilium as the CNI (no takeover of pod networking or IPAM).
+          這一頁是建置驗證的封存頁，不是正式的 identity-based firewall 結果頁。
+          它記錄最早期的相容性檢查：Calico 是否能被收斂成 HostEndpoint + host firewall，
+          同時讓 k3s 持續由 Cilium 擔任 CNI，不接管 pod networking 或 IPAM。
         </p>
       </div>
 
@@ -184,7 +185,7 @@ manifests/calico/cilium-experiment/30-agent-01-deny-test-port-18081.yaml
     </section>
 
       <section class="footer">
-        <p><a href="../experiments.html">← 返回驗證看板</a></p>
+        <p><a href="../library.html#archives">← 返回文件庫</a></p>
       </section>
     </main>
   </div>

@@ -14,6 +14,7 @@
         <a href="./index.html">總覽</a>
         <a href="./experiments.html">驗證看板</a>
         <a href="./install.html" class="active">安裝與支援</a>
+        <a href="./library.html">文件庫</a>
       </nav>
       <div class="topnav-actions">
         <!-- GitHub link can be added here when the repo is public -->
@@ -26,25 +27,33 @@
         <span class="eyebrow">支援文件</span>
         <h1>安裝與支援文件</h1>
         <p>
-          這一頁是支援文件，不是結果頁。它保留目前可重放的 Azure / Calico 建置流程與封存 runbook，
+          這一頁是支援文件，不是結果頁。它保留目前可重放的 Azure / Calico 建置流程與封存執行手冊，
           讓讀者理解環境怎麼架起來；真正的驗證結論請回到驗證看板與各驗證軌詳細頁閱讀。
         </p>
       </div>
 
       <section class="section">
         <h2>文件分類</h2>
-        <div class="grid three">
+        <div class="grid four">
           <div class="card">
-            <h3>Azure / 基礎環境</h3>
-            <p>跳板機、k3s nodes、standalone VMs 與網段的基礎佈建資訊仍保留在這一頁。</p>
+            <h3>基礎環境</h3>
+            <p>跳板機、k3s nodes、standalone VMs 與網段的建置資訊主要保留在這一頁。</p>
+            <a href="#step1">查看建置步驟 →</a>
           </div>
           <div class="card">
-            <h3>Calico 支援流程</h3>
-            <p>這一頁主要還是偏向 Calico 軌道的 onboarding 與封存建置流程，供重放與比對使用。</p>
+            <h3>封存頁</h3>
+            <p>早期建置驗證頁集中在文件庫，仍保有 HTML 導覽與摘要版面。</p>
+            <a href="./library.html#archives">打開封存頁 →</a>
           </div>
           <div class="card">
-            <h3>Cilium 真實結果</h3>
-            <p>Cilium 的真實部署 verdict 已另外整理成獨立結果頁，不再混在 install narrative 裡。</p>
+            <h3>執行手冊</h3>
+            <p>需要重放 Calico 接入或 smoke test 順序時，從文件庫內的執行手冊導讀頁進入。</p>
+            <a href="./library.html#runbooks">打開執行手冊 →</a>
+          </div>
+          <div class="card">
+            <h3>原始記錄</h3>
+            <p>Cilium 的長篇原始記錄與其他原始文件改由文件庫承接，不再直接掛在這頁主路徑。</p>
+            <a href="./library.html#records">打開原始記錄 →</a>
           </div>
         </div>
       </section>
@@ -68,15 +77,15 @@
             <a href="./experiments/cilium-standalone-validation.html">打開 Cilium 結果頁 →</a>
           </div>
           <div class="card">
-            <h3>封存與原始文件</h3>
-            <p>更底層的 runbook、封存建置流程與 markdown 原始紀錄仍保留在本頁底部。</p>
-            <a href="#archives">跳到封存文件 →</a>
+            <h3>文件庫</h3>
+            <p>若你要的是封存頁、執行手冊或原始記錄，直接去文件庫，不必先捲完整個建置步驟頁。</p>
+            <a href="./library.html">打開文件庫 →</a>
           </div>
         </div>
       </section>
 
       <section class="section">
-        <h2>已完成範圍</h2>
+        <h2>這頁涵蓋哪些內容</h2>
         <div class="grid four">
           <div class="card">
             <span class="status ok">完成</span>
@@ -291,11 +300,12 @@ terraform -chdir=infra/azure/terraform apply tfplan-cluster2
       <section class="footer" id="archives">
         <h2>封存與延伸閱讀</h2>
         <p>
-          如果要看更貼近底層的 runbook 與原始紀錄，請參考：
+          如果要看更貼近底層的封存頁、執行手冊導讀與原始記錄導讀，請前往
+          <a href="./library.html">文件庫</a>。常用入口包含
           <a href="./experiments/k3s-cilium-hostendpoint.html">cluster-1 封存頁</a>、
           <a href="./experiments/standalone-vm-hostendpoint.html">VM 封存頁</a>、
-          <a href="./calico-hostendpoint-execution-runbook.md">Calico execution runbook</a>、
-          <a href="./cilium-standalone-host-validation.md">Cilium live record</a>。
+          <a href="./references/calico-execution-runbook.html">Calico 執行手冊導讀</a>、
+          <a href="./references/cilium-live-record.html">Cilium 原始記錄導讀</a>。
         </p>
       </section>
     </main>

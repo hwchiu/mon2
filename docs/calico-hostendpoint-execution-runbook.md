@@ -20,7 +20,7 @@ Use an absolute path for `ssh_public_key_path`.
 After Terraform finishes, return to the repo root before applying manifests:
 
 ```bash
-cd /home/ubuntu/calico
+cd /home/ubuntu/mon2
 ```
 
 ## 2. Verify bootstrap and reachability

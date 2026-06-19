@@ -166,7 +166,7 @@ This phase answers whether Calico HostEndpoints can coexist with Cilium on the s
 
 ## Repository assets
 
-- Azure scaffolding: [infra/azure](/home/ubuntu/calico/infra/azure/README.md)
-- Terraform root: [infra/azure/terraform](/home/ubuntu/calico/infra/azure/terraform)
-- Calico manifests: [manifests/calico](/home/ubuntu/calico/manifests/calico/README.md)
-- Test workloads: [manifests/k8s/test-workloads.yaml](/home/ubuntu/calico/manifests/k8s/test-workloads.yaml)
+- Azure scaffolding: [infra/azure](/home/ubuntu/mon2/infra/azure/README.md)
+- Terraform root: [infra/azure/terraform](/home/ubuntu/mon2/infra/azure/terraform)
+- Calico manifests: [manifests/calico](/home/ubuntu/mon2/manifests/calico/README.md)
+- Test workloads: [manifests/k8s/test-workloads.yaml](/home/ubuntu/mon2/manifests/k8s/test-workloads.yaml)

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>文件庫 · Host Firewall Validation Lab</title>
+  <link rel="stylesheet" href="./assets/site.css">
+</head>
+<body>
+  <header class="topnav">
+    <div class="topnav-inner">
+      <a class="brand" href="./index.html">Host Firewall Validation Lab</a>
+      <nav class="topnav-links" aria-label="Primary">
+        <a href="./index.html">總覽</a>
+        <a href="./experiments.html">驗證看板</a>
+        <a href="./install.html">安裝與支援</a>
+        <a href="./library.html" class="active">文件庫</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="shell">
+    <div class="hero hero-portal">
+      <span class="eyebrow">文件庫</span>
+      <h1>封存頁、執行手冊與原始記錄</h1>
+      <p>
+        這一頁專門收錄較底層的文件型別。若你只想看最新 verdict，請回到驗證看板；
+        若你想追溯舊建置、重放接入流程，或直接閱讀原始記錄，再從這裡往下進入。
+      </p>
+    </div>
+
+    <section class="section">
+      <h2>文件類型</h2>
+      <div class="grid four">
+        <div class="card">
+          <h3>安裝與支援</h3>
+          <p>環境建置、接入順序與支援說明，適合先建立整體脈絡。</p>
+          <a href="./install.html">打開安裝與支援 →</a>
+        </div>
+        <div class="card">
+          <h3>封存頁</h3>
+          <p>以 HTML 整理的舊建置驗證頁，仍保有共同導覽與可掃讀版面。</p>
+          <a href="#archives">查看封存頁 →</a>
+        </div>
+        <div class="card">
+          <h3>執行手冊</h3>
+          <p>偏執行順序與操作指令的文件，適合要重放流程的人閱讀。</p>
+          <a href="#runbooks">查看執行手冊 →</a>
+        </div>
+        <div class="card">
+          <h3>原始記錄</h3>
+          <p>保留當時的逐步紀錄與完整背景；若打開原始 Markdown，會離開 portal chrome。</p>
+          <a href="#records">查看原始記錄 →</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="archives">
+      <h2>封存頁</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3>k3s + Cilium + Calico HostEndpoint</h3>
+          <p>早期共存建置驗證頁，重點是 Calico policy-only 與 Cilium-only k3s 的共存邊界。</p>
+          <a href="./experiments/k3s-cilium-hostendpoint.html">打開封存頁 →</a>
+        </div>
+        <div class="card">
+          <h3>Standalone VM + Felix</h3>
+          <p>早期 standalone VM 接入與 Felix-only HostEndpoint 模型的封存頁。</p>
+          <a href="./experiments/standalone-vm-hostendpoint.html">打開封存頁 →</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="runbooks">
+      <h2>執行手冊</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3>Calico 執行手冊導讀</h3>
+          <p>先讀這個導讀頁，再決定要不要打開原始 Markdown。適合需要重跑 Calico 驗證流程的人。</p>
+          <a href="./references/calico-execution-runbook.html">閱讀導讀頁 →</a>
+        </div>
+        <div class="card">
+          <h3>安裝與支援頁</h3>
+          <p>若你要的是 Terraform、k3s / Cilium、external host 接入流程，先回到安裝與支援頁。</p>
+          <a href="./install.html#step1">回到建置步驟 →</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="records">
+      <h2>原始記錄</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3>Cilium 真實輪次導讀</h3>
+          <p>導讀頁會先說明這份記錄的用途、內容與推薦閱讀順序，再提供原始 Markdown 入口。</p>
+          <a href="./references/cilium-live-record.html">閱讀導讀頁 →</a>
+        </div>
+        <div class="card">
+          <h3>Calico Azure 驗證計畫</h3>
+          <p>這份文件仍是原始 Markdown，保留較早期的 Azure 驗證計畫與檔案索引。</p>
+          <a href="./calico-hostendpoint-azure-validation-plan.md">打開原始 Markdown →</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="footer">
+      <p>
+        想回到摘要與 verdict，前往 <a href="./experiments.html">驗證看板</a>。
+        想理解目前環境怎麼被建立，前往 <a href="./install.html">安裝與支援</a>。
+      </p>
+    </section>
+  </main>
+
+  <script>
+    (function() {
+      document.querySelectorAll('pre').forEach(function(pre) {
+        var btn = document.createElement('button');
+        btn.className = 'copy-btn';
+        btn.textContent = 'copy';
+        btn.addEventListener('click', function() {
+          var text = pre.innerText || pre.textContent;
+          navigator.clipboard.writeText(text.trim()).then(function() {
+            var orig = btn.textContent;
+            btn.textContent = 'copied';
+            setTimeout(function(){ btn.textContent = orig; }, 1400);
+          });
+        });
+        pre.appendChild(btn);
+      });
+    })();
+  </script>
+</body>
+</html>

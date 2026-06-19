@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calico 執行手冊導讀 · Host Firewall Validation Lab</title>
+  <link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+  <header class="topnav">
+    <div class="topnav-inner">
+      <a class="brand" href="../index.html">Host Firewall Validation Lab</a>
+      <nav class="topnav-links" aria-label="Primary">
+        <a href="../index.html">總覽</a>
+        <a href="../experiments.html">驗證看板</a>
+        <a href="../install.html">安裝與支援</a>
+        <a href="../library.html" class="active">文件庫</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="shell">
+    <div class="hero">
+      <span class="eyebrow">執行手冊導讀</span>
+      <h1>Calico 執行手冊導讀</h1>
+      <p>
+        這一頁用來說明 Calico 執行手冊的角色。它不是結果頁，而是偏操作順序與回放流程的文件。
+        若你要先看成果，請先去 Calico 的 zone-isolation 結果頁。
+      </p>
+    </div>
+
+    <section class="section">
+      <h2>這份文件怎麼用</h2>
+      <div class="grid three">
+        <div class="card">
+          <h3>先看結果</h3>
+          <p>先用 HTML 結果頁掌握 zone1 / zone2 的實際結果，再決定是否需要回看執行手冊。</p>
+        </div>
+        <div class="card">
+          <h3>再看步驟</h3>
+          <p>需要重放環境時，再用執行手冊對照 Terraform、k3s、standalone VM 與 smoke test 的順序。</p>
+        </div>
+        <div class="card">
+          <h3>最後看原文</h3>
+          <p>原始 Markdown 會離開 portal chrome，但保留最完整的指令與步驟上下文。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>推薦入口</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3>Calico 結果頁</h3>
+          <p>先看已完成的 zone-isolation 結果、矩陣與結論。</p>
+          <a href="../experiments/zone-isolation.html">打開 Calico 結果頁 →</a>
+        </div>
+        <div class="card">
+          <h3>安裝與支援</h3>
+          <p>若你要理解目前環境如何建起來，請先回到安裝與支援頁。</p>
+          <a href="../install.html#step1">打開安裝與支援 →</a>
+        </div>
+        <div class="card">
+          <h3>Raw Markdown</h3>
+          <p>直接閱讀原始執行手冊；此入口會離開 portal chrome。</p>
+          <a href="../calico-hostendpoint-execution-runbook.md">打開原始 Markdown →</a>
+        </div>
+        <div class="card">
+          <h3>回到文件庫</h3>
+          <p>若你要找其他封存頁或原始記錄，回到文件庫再選會比較清楚。</p>
+          <a href="../library.html#runbooks">回到文件庫 →</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>這份執行手冊包含什麼</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3>內容範圍</h3>
+          <ul>
+            <li>Azure VM lab 建立流程</li>
+            <li>bootstrap 與可達性檢查</li>
+            <li>standalone VM baseline 驗證</li>
+            <li>k3s + Cilium coexistence 嘗試與 smoke tests</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>閱讀提醒</h3>
+          <ul>
+            <li>這是操作文件，不是最終 verdict 頁</li>
+            <li>執行前應先確認 repo 路徑與 kubeconfig 位置</li>
+            <li>若只想看成果，不需要先打開這份文件</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="footer">
+      <p>
+        回到 <a href="../library.html">文件庫</a> ·
+        回到 <a href="../experiments/zone-isolation.html">Calico 結果頁</a>
+      </p>
+    </section>
+  </main>
+
+  <script>
+    (function() {
+      document.querySelectorAll('pre').forEach(function(pre) {
+        var btn = document.createElement('button');
+        btn.className = 'copy-btn';
+        btn.textContent = 'copy';
+        btn.addEventListener('click', function() {
+          var text = pre.innerText || pre.textContent;
+          navigator.clipboard.writeText(text.trim()).then(function() {
+            var orig = btn.textContent;
+            btn.textContent = 'copied';
+            setTimeout(function(){ btn.textContent = orig; }, 1400);
+          });
+        });
+        pre.appendChild(btn);
+      });
+    })();
+  </script>
+</body>
+</html>

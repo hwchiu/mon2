@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Archive: Standalone VM + Calico Felix · Host Firewall Validation Lab</title>
+  <title>封存：Standalone VM + Calico Felix · Host Firewall Validation Lab</title>
   <link rel="stylesheet" href="../assets/site.css">
 </head>
 <body>
@@ -14,15 +14,16 @@
         <a href="../index.html">總覽</a>
         <a href="../experiments.html">驗證看板</a>
         <a href="../install.html">安裝與支援</a>
+        <a href="../library.html" class="active">文件庫</a>
       </nav>
     </div>
   </header>
 
   <div class="page">
     <aside class="sidebar">
-      <div class="sidebar-title">Archives</div>
+      <div class="sidebar-title">封存文件</div>
       <nav>
-        <a href="../experiments.html">← 返回驗證看板</a>
+        <a href="../library.html#archives">← 返回文件庫</a>
         <a href="k3s-cilium-hostendpoint.html">k3s + Cilium + Calico</a>
         <a href="standalone-vm-hostendpoint.html" class="active">Standalone VM + Felix</a>
       </nav>
@@ -30,12 +31,12 @@
 
     <main class="main">
       <div class="hero">
-        <span class="eyebrow">Archive • Setup Validation</span>
-        <h1>Experiment B: Standalone VM + Calico Felix</h1>
+        <span class="eyebrow">封存頁 · 建置驗證</span>
+        <h1>實驗 B：Standalone VM + Calico Felix</h1>
         <p>
-          This page is also a setup validation archive. It records how two non-Kubernetes Azure VMs were brought
-          into the same Calico HostEndpoint / GlobalNetworkPolicy model while remaining outside any k3s cluster
-          and without becoming Kubernetes workers.
+          這一頁也是建置驗證封存頁。它記錄兩台非 Kubernetes 的 Azure VM
+          如何被帶進同一套 Calico HostEndpoint / GlobalNetworkPolicy 模型，
+          同時保持在任何 k3s cluster 之外，也不成為 Kubernetes workers。
         </p>
       </div>
 
@@ -320,7 +321,7 @@ manifests/calico/vm-experiment/40-legacy-01-deny-http.yaml
     </section>
 
       <section class="footer">
-        <p><a href="../experiments.html">← 返回驗證看板</a></p>
+        <p><a href="../library.html#archives">← 返回文件庫</a></p>
       </section>
     </main>
   </div>
