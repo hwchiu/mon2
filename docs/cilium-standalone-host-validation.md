@@ -136,7 +136,7 @@ the first-pass interpretation from 2026-06-18:
 | Target | Current repo verdict | Why |
 | --- | --- | --- |
 | Selected k3s nodes | `Supported pass` | the 2026-06-19 replay passed same-zone allow plus both cross-zone deny cases, and the cluster stayed healthy |
-| Linux standalone VM | `Deprecated path fail` | deprecated external-workload attachment is present and same-zone allow works, but the zone2 deny cases still do not enforce in either direction |
+| Linux standalone VM | `Deprecated path fail` | deprecated external-workload attachment is present and same-zone allow works, but the standalone host IP path still does not honor the zone2 deny cases in either direction |
 | Windows standalone VM | `No official standalone Windows path found` | Windows bootstrap and IIS succeeded, but no standalone Cilium-managed Windows agent path was established in this lab shape |
 
 The revalidated matrix on 2026-06-19 was:
@@ -173,13 +173,29 @@ Important live findings:
 5. The Linux deprecated path required live remediation before it attached at
    all: the cluster had to be moved off reserved `cluster.id = 0`, then
    clustermesh had to be reset and re-enabled for external workloads.
-6. After attachment, the Linux VM did answer same-zone traffic, but both zone2
-   deny probes still succeeded. That is why the Linux row remains a
-   deprecated-path fail instead of a pass.
-7. The Windows row is not a lab-bootstrap failure. SSH to the VM worked and IIS
+6. A deeper Linux diagnostic rerun on 2026-06-19 showed the problem is more
+   specific than the first pass suggested. In the stock deprecated-path setup,
+   the VM came up as `Kubernetes: Disabled`, endpoint `71` had identity
+   `reserved:host`, `policy get []`, and `policy-enabled: none`.
+7. During that diagnostic rerun, the Linux VM agent was rebuilt temporarily
+   with `--enable-host-firewall`, `--devices=eth0`, and
+   `--policy-cidr-match-mode=nodes`, then a local-only diagnostic host-policy
+   rule was imported. At that point endpoint `71` moved to
+   `policy-enabled: both` and `cilium-dbg bpf policy get 71` did show deny
+   entries for `10.70.10.12/32` on TCP `18080`.
+8. Even with those deny entries present, the actual test traffic to the Linux
+   host IP `10.70.20.20` and back to `10.70.10.12` still succeeded, and the
+   deny counters stayed at `0 packets`. That means the traffic under test was
+   not traversing the datapath hook that the imported policy controlled. The
+   failure is therefore not only "policy never arrived"; it is that this
+   deprecated external-workload path did not produce credible host-IP
+   enforcement for the standalone VM.
+9. After that diagnostic, the Linux VM was rolled back to the original repo
+   baseline so the lab did not remain on a hand-edited agent configuration.
+10. The Windows row is not a lab-bootstrap failure. SSH to the VM worked and IIS
    on TCP `18080` worked. The missing piece was a credible standalone
    Cilium-managed Windows attachment path, not basic VM reachability.
-8. The repo's own Windows bootstrap template for this round only provisions
+11. The repo's own Windows bootstrap template for this round only provisions
    OpenSSH, IIS, and the TCP `18080` test surface. It does not install a
    standalone Cilium agent on the Windows VM.
 

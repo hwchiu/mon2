@@ -116,7 +116,7 @@
             <td>Cilium / Linux VM</td>
             <td>Deprecated external workload path</td>
             <td><span class="badge warn">Deprecated path fail</span></td>
-            <td>attached identity 存在，但 VM 本地沒有真正載入 policy。</td>
+            <td>attached identity 存在；即使手動打開 host firewall 並讓 deny rule 進到 agent，Linux host IP 流量仍未命中 enforcement。</td>
           </tr>
           <tr>
             <td>Cilium / Windows VM</td>

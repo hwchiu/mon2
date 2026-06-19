@@ -46,7 +46,7 @@
         <article class="card">
           <span class="badge warn">Deprecated path fail</span>
           <h3>Linux 獨立 VM</h3>
-          <p>deprecated external workload 有 attach，但 VM 本地 `policy get` 仍為空，沒有實際 enforcement。</p>
+          <p>deprecated external workload 有 attach；即使手動打開 host firewall 並看到 deny rule 進到 agent，實際 host IP 流量仍繞過 enforcement。</p>
         </article>
         <article class="card">
           <span class="badge neutral">No official standalone Windows path found</span>
@@ -185,8 +185,9 @@
         <article class="callout fail">
           <strong>Linux deprecated 路徑</strong>
           <p>
-            external workload registration 存在，cluster identity 也存在，但 Linux VM 本地
-            `policy get []`、`Host firewall: Disabled`，所以它不能算通過。
+            external workload registration 與 cluster identity 都存在。更深入的 2026-06-19 診斷也證明，
+            即使手動重建 VM agent、打開 host firewall，並讓 deny rule 寫進 BPF policy map，
+            實際打到 Linux host IP 的流量仍沒有命中那些 deny entries。
           </p>
         </article>
         <article class="callout limitation">
@@ -215,6 +216,8 @@
           <h3>Standalone 端</h3>
           <ul>
             <li>Linux deprecated path 需要先修正 <code>cluster.id = 1</code> 並重建 clustermesh。</li>
+            <li>診斷時把 Linux VM agent 暫時改成 <code>--enable-host-firewall --devices=eth0 --policy-cidr-match-mode=nodes</code> 後，endpoint 已能進入 <code>policy-enabled: both</code>，而且本地 BPF map 也能看到 deny entry。</li>
+            <li>但真實測試流量仍經過 Linux host IP <code>10.70.20.20</code> 放行，deny counter 維持 <code>0 packets</code>；因此這條 deprecated path 不能算可信的 standalone host-IP enforcement。</li>
             <li>Windows bootstrap template 只安裝 OpenSSH 與 IIS，並沒有安裝 standalone Cilium agent。</li>
             <li>Windows row 的正確分類是 <code>No official standalone Windows path found</code>，不是 infrastructure bring-up failure。</li>
           </ul>
